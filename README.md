@@ -11,9 +11,16 @@
 
 Scientists don't think in linear documents. They think in **connections** — between ideas, papers, evidence, and arguments. 
 
-**ScienceStudio** is the first IDE designed for the scientific method. Just as developers moved from text editors to intelligent IDEs, we're bringing that same evolution to research.
+We ask brilliant researchers to solve humanity’s hardest problems using the same tools designed for office memos (Microsoft Word). Word treats a 100-page thesis like a flat string of characters. It has no concept of a hypothesis, it breaks when you handle complex citations, and it has no memory of the 50 PDFs you just read.
 
-## The B.R.P.W. Loop™
+ScienceStudio replaces the "Word + Zotero + 20 Chrome Tabs" workflow with a single, programmable environment. It treats your research paper not as a document, but as a codebase—structured, version-controlled, and logically verified.
+
+## The Philosophy
+Programmers moved from Notepad to VS Code because they needed tools that understood the structure of their code (definitions, references, refactoring). ScienceStudio brings this same leap to researchers.
+
+We prioritize Local-First Intelligence. Your unpublished data is your most valuable asset. ScienceStudio runs entirely on your machine—no cloud uploads, no external model training.
+
+## How it works - The B.R.P.W. Loop™
 
 Research isn't typing — it's a cognitive loop. We've built our entire system around how scientists actually work:
 
