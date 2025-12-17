@@ -133,33 +133,141 @@ Extension copies file back to original location
 
 ## Integration with Claude Code
 
-OnlyOffice handles editing. Claude Code (via MCP servers) handles research:
+### Architecture: VS Code Extension Bridge
+
+**Decision**: Use VS Code Extension as bridge between OnlyOffice and Claude Code (not a separate OnlyOffice plugin).
+
+**Why this approach:**
+- Single brain (Claude Code) for all AI operations
+- Full access to MCP servers (library, pdf, citation, docx)
+- Consistent context across document + library + chat
+- One integration to maintain, not two
 
 ```
-┌─────────────────┐     ┌─────────────────┐
-│  OnlyOffice     │     │  Claude Code    │
-│  (Editing)      │     │  (Research)     │
-│                 │     │                 │
-│  - Write text   │     │  - Find papers  │
-│  - Format       │     │  - Verify cites │
-│  - Track changes│     │  - Suggest text │
-└────────┬────────┘     └────────┬────────┘
-         │                       │
-         └───────────┬───────────┘
-                     │
-              ┌──────▼──────┐
-              │  .docx file │
-              │  (on disk)  │
-              └─────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  OnlyOffice WebView                                         │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │  User selects text → [Cmd+K] → Inline AI prompt       │  │
+│  └──────────────────────────┬────────────────────────────┘  │
+│                              │ postMessage                   │
+│                              ▼                               │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │  VS Code Extension (Bridge)                           │  │
+│  │  - Receives: selection, context, command              │  │
+│  │  - Sends to Claude Code                               │  │
+│  │  - Returns: AI response → OnlyOffice                  │  │
+│  └──────────────────────────┬────────────────────────────┘  │
+└──────────────────────────────┼───────────────────────────────┘
+                               │
+                               ▼
+┌──────────────────────────────────────────────────────────────┐
+│  Claude Code (Brain) + MCP Servers                           │
+│                                                              │
+│  Full research assistant capabilities:                       │
+│  - library_search() → find papers in user's library          │
+│  - pdf_extract_sections() → get relevant quotes              │
+│  - citation_search() → find new papers online                │
+│  - Verify claims, suggest citations, improve writing         │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-**Workflow:**
+### Inline AI Assistant
+
+**Trigger**: User selects text in OnlyOffice → presses `Cmd+K` (Mac) / `Ctrl+K` (Windows)
+
+**Available Commands:**
+
+| Command | Description | MCP Tools Used |
+|---------|-------------|----------------|
+| Refine | Polish writing, fix grammar | - |
+| Expand | Elaborate on the point | - |
+| Condense | Make more concise | - |
+| Add citations | Find supporting papers from library | library_search, pdf_extract |
+| Find sources | Search Semantic Scholar for new papers | citation_search |
+| Verify claim | Check if claim is supported by sources | library_search, pdf_extract |
+| Strengthen | Add evidence + improve reasoning | library_search, citation_search |
+| Counter-arguments | Find opposing viewpoints | citation_search |
+
+**UI Flow:**
+
+```
+┌─────────────────────────────────────────────┐
+│ Selected: "cognitive load affects memory"   │
+├─────────────────────────────────────────────┤
+│ ┌─────────────────────────────────────────┐ │
+│ │ What do you want to do?                 │ │
+│ │                                         │ │
+│ │ [Refine] [Expand] [Add citations]       │ │
+│ │ [Find sources] [Verify] [Strengthen]    │ │
+│ │                                         │ │
+│ │ Or type a custom instruction...         │ │
+│ └─────────────────────────────────────────┘ │
+└─────────────────────────────────────────────┘
+          │
+          ▼ (user clicks "Add citations")
+┌─────────────────────────────────────────────┐
+│ 🔍 Searching your library...                │
+│ 📄 Found 3 relevant papers                  │
+│ ✅ Adding citations...                      │
+├─────────────────────────────────────────────┤
+│ "cognitive load affects memory (Sweller,    │
+│  1988; Baddeley & Hitch, 1974)"            │
+│                                             │
+│      [Accept]  [Edit]  [Reject]             │
+└─────────────────────────────────────────────┘
+```
+
+**Response Streaming:**
+
+Show Claude's work in real-time:
+- "🔍 Searching your library..."
+- "📄 Found 3 relevant papers"
+- "🌐 Checking Semantic Scholar..."
+- "✅ Verified: claim supported by 2 sources"
+
+### Message Protocol
+
+**OnlyOffice → VS Code Extension:**
+
+```typescript
+interface InlineAIRequest {
+  type: 'inline-ai-request';
+  selection: string;           // Selected text
+  context: {
+    before: string;            // 500 chars before selection
+    after: string;             // 500 chars after selection
+    section: string;           // Current section (Introduction, Methods, etc.)
+    documentPath: string;      // Path to .docx file
+  };
+  command: string;             // 'refine' | 'expand' | 'add-citations' | 'custom'
+  customPrompt?: string;       // If command is 'custom'
+}
+```
+
+**VS Code Extension → OnlyOffice:**
+
+```typescript
+interface InlineAIResponse {
+  type: 'inline-ai-response';
+  status: 'streaming' | 'complete' | 'error';
+  progress?: string;           // "Searching library...", etc.
+  result?: string;             // Final text to insert
+  citations?: Citation[];      // Papers cited (for reference panel)
+  error?: string;
+}
+```
+
+### Basic Workflow (Without Inline AI)
+
+For users who prefer chat-based interaction:
+
 1. User writes in OnlyOffice
-2. Asks Claude: "Find evidence for [claim]"
-3. Claude uses library-mcp to search papers
-4. Claude suggests text with citation
-5. User pastes into OnlyOffice
-6. OnlyOffice maintains formatting
+2. Opens Claude Code chat panel
+3. Asks: "Find evidence for [claim] in my document"
+4. Claude uses library-mcp to search papers
+5. Claude suggests text with citation
+6. User copies into OnlyOffice
+7. OnlyOffice maintains formatting
 
 ## Licensing
 
@@ -178,13 +286,23 @@ OnlyOffice Document Server is **AGPL-3.0**:
 - [ ] Basic WebView embedding
 - [ ] File open/save flow
 
-### Phase 2: Enhanced Experience
+### Phase 2: Inline AI Assistant
+- [ ] Implement postMessage bridge (OnlyOffice ↔ Extension)
+- [ ] Add Cmd+K keyboard shortcut in OnlyOffice WebView
+- [ ] Build inline AI popup UI (command buttons + custom prompt)
+- [ ] Connect to Claude Code for AI responses
+- [ ] Implement response streaming with progress indicators
+- [ ] Add Accept/Edit/Reject buttons for AI suggestions
+- [ ] Wire up MCP tools (library_search, citation_search, pdf_extract)
+
+### Phase 3: Enhanced Experience
 - [ ] Auto-start Document Server
 - [ ] Error handling & status indicators
 - [ ] Integration with PDF Library sidebar
-- [ ] Citation insertion from Claude
+- [ ] Citation formatting (APA, MLA, Chicago, etc.)
+- [ ] Reference management panel (show cited papers)
 
-### Phase 3: Distribution
+### Phase 4: Distribution
 - [ ] Bundle Document Server binary
 - [ ] One-click installer
 - [ ] Auto-update mechanism

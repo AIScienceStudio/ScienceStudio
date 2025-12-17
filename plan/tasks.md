@@ -155,12 +155,40 @@ Location: `extensions/sciencestudio-core/`
 
 See `docs/plans/2024-12-17-onlyoffice-integration-design.md` for full design.
 
-### Task 2.3: PDF Viewer Integration ⬜
+### Task 2.3: Inline AI Assistant ⬜
+**Purpose**: Full research assistant inside the editor (like Cursor for code)
+
+**Architecture**: VS Code Extension Bridge (not OnlyOffice plugin)
+- Single Claude Code brain for all AI operations
+- Full access to MCP servers (library, pdf, citation)
+- postMessage bridge between OnlyOffice WebView ↔ Extension
+
+**Implementation Tasks**:
+- [ ] Implement postMessage bridge (OnlyOffice ↔ Extension)
+- [ ] Add Cmd+K / Ctrl+K keyboard shortcut in OnlyOffice WebView
+- [ ] Build inline AI popup UI (command buttons + custom prompt)
+- [ ] Connect to Claude Code for AI responses
+- [ ] Implement response streaming with progress indicators
+- [ ] Add Accept/Edit/Reject buttons for AI suggestions
+
+**AI Commands**:
+| Command | Description | MCP Tools |
+|---------|-------------|-----------|
+| Refine | Polish writing | - |
+| Expand | Elaborate | - |
+| Add citations | From library | library_search, pdf_extract |
+| Find sources | New papers | citation_search |
+| Verify claim | Check sources | library_search, pdf_extract |
+| Strengthen | Add evidence | library_search, citation_search |
+
+See `docs/plans/2024-12-17-onlyoffice-integration-design.md` for full design.
+
+### Task 2.4: PDF Viewer Integration ⬜
 - [ ] Integrate PDF.js for viewing
 - [ ] Add annotation support (sidecar JSON files)
 - [ ] Connect to library-mcp for context
 
-### Task 2.4: Claude Code Chat Integration ⬜
+### Task 2.5: Claude Code Chat Integration ⬜
 - [ ] Create chat panel webview
 - [ ] Connect to Claude Code CLI
 - [ ] Show research context in chat
