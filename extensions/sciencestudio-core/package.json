@@ -1,0 +1,116 @@
+{
+  "name": "sciencestudio-core",
+  "displayName": "ScienceStudio Core",
+  "description": "Core functionality for ScienceStudio - IDE for Science",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onCommand:sciencestudio.toggleFocusMode",
+    "onCustomEditor:sciencestudio.docxEditor"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "sciencestudio.toggleFocusMode",
+        "title": "Toggle Focus Mode",
+        "category": "ScienceStudio"
+      },
+      {
+        "command": "sciencestudio.openLibrary",
+        "title": "Open PDF Library",
+        "category": "ScienceStudio"
+      }
+    ],
+    "customEditors": [
+      {
+        "viewType": "sciencestudio.docxEditor",
+        "displayName": "Research Document Editor",
+        "selector": [
+          {
+            "filenamePattern": "*.docx"
+          },
+          {
+            "filenamePattern": "*.research"
+          }
+        ],
+        "priority": "default"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "research",
+          "title": "Research",
+          "icon": "$(beaker)"
+        }
+      ]
+    },
+    "views": {
+      "research": [
+        {
+          "id": "sciencestudio.library",
+          "name": "PDF Library",
+          "icon": "$(library)",
+          "contextualTitle": "PDF Library"
+        },
+        {
+          "id": "sciencestudio.outline",
+          "name": "Document Outline",
+          "icon": "$(list-tree)",
+          "contextualTitle": "Document Outline"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ScienceStudio",
+      "properties": {
+        "sciencestudio.focusMode.hideActivityBar": {
+          "type": "boolean",
+          "default": true,
+          "description": "Hide activity bar in focus mode"
+        },
+        "sciencestudio.focusMode.hideStatusBar": {
+          "type": "boolean",
+          "default": false,
+          "description": "Hide status bar in focus mode"
+        },
+        "sciencestudio.library.path": {
+          "type": "string",
+          "default": "${workspaceFolder}/library",
+          "description": "Path to PDF library folder"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/node": "20.x",
+    "@typescript-eslint/eslint-plugin": "^6.15.0",
+    "@typescript-eslint/parser": "^6.15.0",
+    "eslint": "^8.56.0",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "prosemirror-state": "^1.4.3",
+    "prosemirror-view": "^1.33.0",
+    "prosemirror-model": "^1.19.4",
+    "prosemirror-schema-basic": "^1.2.2",
+    "prosemirror-schema-list": "^1.3.0",
+    "prosemirror-example-setup": "^1.2.2",
+    "mammoth": "^1.6.0",
+    "pdf-parse": "^1.1.1"
+  }
+}
