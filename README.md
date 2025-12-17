@@ -7,13 +7,13 @@
 ![Stack](https://img.shields.io/badge/Stack-TypeScript%20%7C%20Python%20%7C%20React-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Mac%20%7C%20Linux-lightgrey)
 
-## 🚀 What if research writing worked like research thinking?
+## What if research writing worked like research thinking?
 
 Scientists don't think in linear documents. They think in **connections** — between ideas, papers, evidence, and arguments. 
 
 **ScienceStudio** is the first IDE designed for the scientific method. Just as developers moved from text editors to intelligent IDEs, we're bringing that same evolution to research.
 
-## 🧠 The B.R.P.W. Loop™
+## The B.R.P.W. Loop™
 
 Research isn't typing — it's a cognitive loop. We've built our entire system around how scientists actually work:
 
@@ -26,67 +26,67 @@ Research isn't typing — it's a cognitive loop. We've built our entire system a
 <table>
 <tr>
 <td width="25%" align="center">
-<h3>🌟 Brainstorm</h3>
+<h3> Brainstorm</h3>
 <p>Explore ideas with an AI that knows your entire research context</p>
 </td>
 <td width="25%" align="center">
-<h3>📖 Read</h3>
+<h3> Read</h3>
 <p>100 PDFs become a queryable knowledge graph, not a folder of files</p>
 </td>
 <td width="25%" align="center">
-<h3>🗺️ Plan</h3>
+<h3> Plan</h3>
 <p>Structure arguments before writing — like architects before building</p>
 </td>
 <td width="25%" align="center">
-<h3>✨ Write</h3>
+<h3> Write</h3>
 <p>Focus on ideas while AI handles citations, consistency, and logic</p>
 </td>
 </tr>
 </table>
 
-## 🎯 Built for How Science Really Works
+## Built for How Science Really Works
 
 <table>
 <tr>
 <td width="50%">
 
 ### Traditional Tools Force You To:
-- 🔄 Alt-tab between 20 PDF windows
-- 📝 Copy-paste citations manually
-- 🔍 Ctrl+F through hundreds of pages
-- 💭 Hold your entire argument in your head
-- ⚡ Lose flow switching between apps
+- Alt-tab between 20 PDF windows
+- Copy-paste citations manually
+- Ctrl+F through hundreds of pages
+- Hold your entire argument in your head
+- Lose flow switching between apps
 
 </td>
 <td width="50%">
 
 ### ScienceStudio Lets You:
-- 🧠 Query your entire library instantly
-- 🔗 Click any citation to see its source
-- 💡 Ask "What contradicts this claim?"
-- 📊 Visualize argument structure
-- 🚀 Stay in flow with unified workspace
+- Query your entire library instantly
+- Click any citation to see its source
+- Ask "What contradicts this claim?"
+- Visualize argument structure
+- Stay in flow with unified workspace
 
 </td>
 </tr>
 </table>
 
-## 🏗️ Powerful Tech, Invisible Complexity
+## Powerful Tech, Invisible Complexity
 
 ```
 Your Workspace                           Under the Hood
 ─────────────                           ──────────────
                                        
-📝 Clean writing space      ←→         VS Code Extension Platform
-📚 Smart PDF library        ←→         LanceDB (10k papers, 100MB RAM)
-💬 Research assistant       ←→         Local AI with your full context
-🔍 Semantic search         ←→         Knowledge graph, not keyword matching
-📊 Living documents        ←→         Git-versioned, structured data
+Clean writing space      ←→         VS Code Extension Platform
+Smart PDF library        ←→         LanceDB (10k papers, 100MB RAM)
+Research assistant       ←→         Local AI with your full context
+Semantic search         ←→         Knowledge graph, not keyword matching
+Living documents        ←→         Git-versioned, structured data
 ```
 
 **Your data never leaves your machine.** No cloud uploads. No training on your unpublished work. Complete privacy.
 
-## ⚡ See It In Action
+## See It In Action
 
 ```python
 # Traditional way: 
@@ -104,7 +104,7 @@ AI: Found in Smith et al. (2023), p. 45: "Cognitive load significantly
     [View PDF] [Insert Citation] [See Related Papers]
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ```bash
 # Clone and enter the repository
@@ -121,7 +121,7 @@ npm run compile
 # Press F5 in VS Code to experience the future of research
 ```
 
-## 🗺️ Join the Revolution
+## Join the Revolution
 
 ### Phase 1: Foundation 🏗️ **← We are here**
 - [x] Architecture & vision defined
@@ -141,7 +141,7 @@ npm run compile
 - [ ] Export to any format
 - [ ] Plugin ecosystem
 
-## 🌟 Why This Matters
+## Why This Matters
 
 <div align="center">
 <table>
@@ -168,20 +168,11 @@ We're not just building software — we're building the future of scientific com
 
 ### Core Contributors Wanted
 
-- **🎨 UI/UX Designer** — Make complexity feel simple
-- **🧠 AI/ML Engineer** — Build the research assistant
-- **📚 Research Tool Developer** — Create citation and library features
-- **🔧 Systems Developer** — Optimize for large document handling
+- **  UI/UX Designer** — Make complexity feel simple
+- **  AI/ML Engineer** — Build the research assistant
+- **  Research Tool Developer** — Create citation and library features
+- **  Systems Developer** — Optimize for large document handling
 
-### First Issues to Tackle
-
-```markdown
-🟢 Good First Issue: Design the "Focus Mode" UI
-🟢 Good First Issue: Create ProseMirror academic schema  
-🟡 Medium: Build PDF annotation system
-🟡 Medium: Implement citation autocomplete
-🔴 Advanced: Design the knowledge graph architecture
-```
 
 ## 🤝 Community
 
@@ -191,11 +182,11 @@ We're not just building software — we're building the future of scientific com
 
 Join researchers worldwide who believe science deserves better tools.
 
-[💬 Discord](https://discord.gg/sciencestudio) • [📧 Email](mailto:team@sciencestudio.ai) • [🐦 Twitter](https://twitter.com/sciencestudio)
+[Discord](https://discord.gg/sciencestudio) • [Email](mailto:team@sciencestudio.ai) • [Twitter](https://twitter.com/sciencestudio)
 
 </div>
 
-## 📚 Deep Dive
+## Deep Dive
 
 - **[Vision & Philosophy](docs/pitch.md)** — Why we're building this
 - **[Functional Spec](docs/functional-specification.md)** — What we're building
@@ -203,7 +194,7 @@ Join researchers worldwide who believe science deserves better tools.
 - **[Design Choices](docs/design-choices.md)** — Key decisions explained
 - **[Roadmap](docs/roadmap.md)** — Where we're going
 
-## 📄 License
+## License
 
 MIT © 2024 AIScienceStudio — Open source forever, because knowledge should be free.
 
@@ -216,7 +207,5 @@ MIT © 2024 AIScienceStudio — Open source forever, because knowledge should be
 <img src="https://img.shields.io/badge/Fork-This_Repo-brightgreen?style=for-the-badge" alt="Fork This Repo">
 </a>
 <br><br>
-<b>Star ⭐ this repo to follow our journey</b>
-<br><br>
-<i>Because every great discovery deserves great tools.</i>
+<b>Star this repo to follow our journey</b>
 </div>
