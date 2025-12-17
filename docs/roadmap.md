@@ -3,6 +3,21 @@
 **Vision:** Build the "IDE for Science" by transforming VS Code into an Agentic Research Environment.  
 **Strategy:** Start with VS Code Extension → Strip the "Coder" UI → Inject "Researcher" Tools → Connect the Agentic Brain.
 
+## Development Approach
+
+This roadmap is organized in **phases**, not timelines. Each phase has clear objectives and "Definition of Done" criteria. The speed of execution depends on development resources and community contributions.
+
+**Core Principle**: Ship working software early, iterate based on real researcher feedback.
+
+## Phase Overview
+
+1. **🏗️ The "Zen" Foundation** - Clean document editor, no AI yet
+2. **🧠 The "Read" Loop** - PDF intelligence and library management
+3. **🎓 The "Scholar" Loop** - Citations and academic workflows
+4. **🚀 The "Power" Loop** - Production-ready performance and scale
+5. **🌐 Cloud & Collaboration** - Web version and team features
+6. **🔮 The Moonshots** - Advanced features and ecosystem
+
 ---
 
 ## 🏗️ Phase 1: The "Zen" Foundation
@@ -156,12 +171,21 @@
 
 ---
 
-## Critical Path to First User (Your Girlfriend)
+## Development Philosophy
 
-**Week 1-2**: Phase 1.1-1.2 (Extension scaffold + UI cleanup)  
-**Week 3-4**: Phase 1.3 (Basic ProseMirror)  
-**Week 5-6**: Phase 2.1-2.2 (PDF viewing + extraction)  
-**Week 7-8**: Phase 2.3 (Basic chat)  
-**Week 9**: First user test → "Can you write a page of your thesis?"
+### Phase Progression
+- Each phase builds on the previous one
+- Complete "Definition of Done" before moving to next phase
+- User feedback drives priority within phases
+- Technical debt addressed between phases
 
-After this milestone, development is guided by real user feedback.
+### Release Strategy
+- **Alpha**: Internal testing with trusted researchers
+- **Beta**: Limited release to academic community
+- **Public**: Open availability after Phase 3 completion
+
+### Success Indicators
+- Researchers can complete real work in the tool
+- Performance meets targets under real workloads
+- Community contributors start submitting PRs
+- Users report time savings and quality improvements

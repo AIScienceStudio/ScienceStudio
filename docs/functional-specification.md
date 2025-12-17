@@ -37,17 +37,28 @@ ScienceStudio is a research-focused IDE that bridges the gap between traditional
 - **Context Window**: Index entire literature library for AI assistance
 
 ### 3. AI Research Assistant
+
+#### Core Capabilities
 - **Location-Aware Editing**: AI understands document structure and can:
   - Strengthen arguments in specific sections
   - Find evidence from PDF library for claims
   - Suggest citations from loaded papers
   - Verify citation accuracy
   - Match writing style and tone
-- **Research-Specific Commands**:
-  - "Find evidence for this claim in my PDFs"
-  - "Strengthen the causal argument using Study A & B"
-  - "Convert all citations from APA 6 to APA 7"
-  - "Check if this claim matches the cited paper"
+
+#### Research-Specific Tools (via MCP)
+1. **search_memory**: Semantic search across PDF library
+2. **verify_citation**: Check claims against source material
+3. **suggest_evidence**: Find supporting evidence for arguments
+4. **append_citation**: Add properly formatted citations
+5. **plan_update**: Track research progress in RESEARCH.md
+
+#### Example Commands
+- "Find evidence for this claim in my PDFs"
+- "Strengthen the causal argument using Study A & B"
+- "Convert all citations from APA 6 to APA 7"
+- "Check if this claim matches the cited paper"
+- "What methods did Smith 2023 use?"
 
 ### 4. Document Import/Export
 - **Perfect Round-Tripping**:
@@ -92,19 +103,44 @@ ScienceStudio is a research-focused IDE that bridges the gap between traditional
 3. Suggests relevant papers from library
 4. Auto-inserts citation in correct format
 
+## Technical Architecture
+
+### Split-Brain Design
+- **Frontend (The Studio)**: VS Code Extension providing the UI and editing experience
+- **Backend (The Brain)**: AI processing layer handling document analysis and intelligence
+- **Communication**: IPC/WebSocket between frontend and backend for non-blocking operations
+
+### Core Components
+
+#### Document Processing
+- **Import**: mammoth.js for .docx parsing with format preservation
+- **Editor**: ProseMirror with custom schema for academic documents
+- **Export**: Pandoc integration for multi-format support
+
+#### AI Integration Options
+1. **Model Context Protocol (MCP)**: For standardized AI tool exposure
+2. **LangChain.js**: For complex AI orchestration
+3. **Local LLM Support**: Via Ollama for privacy-conscious users
+
+#### Storage Architecture
+- **Documents**: File system with Git-based version control
+- **Vector Store**: ChromaDB (dev) / LanceDB (production)
+- **Metadata**: SQLite for citation management and document relationships
+
 ## Technical Requirements
 
 ### Desktop Application
 - Cross-platform (Windows, Mac, Linux)
-- Based on VS Code/Electron
-- Local PDF processing
-- Offline capability
+- Based on VS Code Extension framework
+- Local-first processing with optional cloud
+- Sub-2 second document load times
+- Handle 1000+ PDF libraries
 
-### Cloud Version
-- VS Code Web compatibility
-- Browser-based PDF processing
-- Real-time collaboration
-- Cloud storage integration
+### Web Version
+- VS Code Web Extension compatibility
+- Progressive Web App capabilities
+- WebAssembly for performance-critical operations
+- IndexedDB for client-side storage
 
 ## Success Metrics
 
