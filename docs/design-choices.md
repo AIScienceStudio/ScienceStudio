@@ -378,7 +378,91 @@ For offline/privacy needs:
 
 ---
 
-## 10. Business Model Consideration
+## 10. Document Format Support
+
+### Decision: Support Both Word (.docx) AND LaTeX (.tex)
+
+**Rationale**: Different disciplines have different requirements.
+
+#### Market Research
+
+| Format | Est. Usage | Primary Disciplines |
+|--------|------------|---------------------|
+| **Word (.docx)** | 60-70% | Biology, Medicine, Social Sciences, Humanities |
+| **LaTeX (.tex)** | 10-30% | Math, Physics, CS, Engineering |
+
+*See `docs/market-research.md` for detailed analysis.*
+
+#### Why Both?
+
+**Word users need:**
+- Track changes for co-author collaboration
+- Journal submission compatibility
+- Familiar interface for advisors
+
+**LaTeX users need:**
+- Proper equation support
+- Conference format compliance (ACM, IEEE, arXiv)
+- Version control friendly (plain text)
+
+**Combined coverage:** ~95%+ of academic researchers
+
+#### Implementation
+
+| Format | Editor | Inline AI |
+|--------|--------|-----------|
+| **.docx** | OnlyOffice (WebView) | ✅ Cmd+K |
+| **.tex** | Monaco/CodeMirror (WebView) | ✅ Cmd+K |
+
+**LaTeX Editor Features:**
+- Syntax highlighting
+- Live PDF preview (compile on save)
+- BibTeX integration
+- Same inline AI commands as Word editor
+- Same MCP server access (library, citation, pdf)
+
+#### Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│  VS Code Extension                                  │
+│                                                     │
+│  ┌─────────────────┐  ┌─────────────────┐          │
+│  │  OnlyOffice     │  │  LaTeX Editor   │          │
+│  │  (.docx)        │  │  (.tex)         │          │
+│  │                 │  │                 │          │
+│  │  - Track changes│  │  - Syntax HL    │          │
+│  │  - Equations    │  │  - PDF preview  │          │
+│  │  - Tables       │  │  - BibTeX       │          │
+│  └────────┬────────┘  └────────┬────────┘          │
+│           │                    │                    │
+│           └────────┬───────────┘                    │
+│                    │                                │
+│           ┌────────▼────────┐                       │
+│           │  Inline AI      │                       │
+│           │  (Cmd+K)        │                       │
+│           │  Same commands  │                       │
+│           │  for both       │                       │
+│           └────────┬────────┘                       │
+└────────────────────┼────────────────────────────────┘
+                     │
+              MCP Servers
+```
+
+#### Competitive Advantage
+
+| Tool | Word | LaTeX | AI | Local |
+|------|------|-------|-----|-------|
+| MS Word | ✅ | ❌ | ✅ | ❌ |
+| Google Docs | ✅ | ❌ | ✅ | ❌ |
+| Overleaf | ❌ | ✅ | ❌ | ❌ |
+| **ScienceStudio** | ✅ | ✅ | ✅ | ✅ |
+
+**Our differentiator:** Only tool that supports BOTH formats with AI + local-first.
+
+---
+
+## 11. Business Model Consideration
 
 ### Decision: Open Core Model
 

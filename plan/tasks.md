@@ -6,13 +6,17 @@
 ┌─────────────────────────────────────────────────────┐
 │  ScienceStudio UI Layer                             │
 │  ├── VS Code Extension                              │
-│  │   ├── OnlyOffice WebView for .docx editing       │
-│  │   ├── Inline AI Assistant (Cmd+K)                │
+│  │   ├── OnlyOffice (.docx) ─┬─ Inline AI (Cmd+K)   │
+│  │   ├── LaTeX Editor (.tex) ─┘                     │
 │  │   ├── PDF Library view                           │
 │  │   └── Focus Mode (hides complexity)              │
 ├─────────────────────────────────────────────────────┤
-│  OnlyOffice Document Server (Local Docker)          │
-│  └── Full Word compatibility, track changes, eqns   │
+│  Document Backends:                                 │
+│  ┌─────────────────┐  ┌─────────────────┐          │
+│  │ OnlyOffice      │  │ LaTeX Compiler  │          │
+│  │ (Docker)        │  │ (tectonic)      │          │
+│  │ .docx editing   │  │ .tex → PDF      │          │
+│  └─────────────────┘  └─────────────────┘          │
 ├─────────────────────────────────────────────────────┤
 │  Choose Your Brain:                                 │
 │  ┌─────────────┐  ┌─────────────┐                   │
@@ -40,7 +44,12 @@
 - **Claude Code** (default) - Best agent orchestration (Anthropic Claude)
 - **OpenCode** (alternative) - GPT-4, Gemini, LLaMA, Mistral, 75+ models
 
-**Editor Choice**: OnlyOffice for pixel-perfect Word compatibility. See `docs/plans/2024-12-17-onlyoffice-integration-design.md`.
+**Supported Formats:**
+- **.docx** (Word) - OnlyOffice, covers 60-70% of researchers
+- **.tex** (LaTeX) - Monaco editor, covers 10-30% (70-90% in STEM math)
+- **Combined coverage: ~95% of academic researchers**
+
+See `docs/market-research.md` for usage data and `docs/design-choices.md` section 10 for rationale.
 
 ---
 
@@ -195,14 +204,47 @@ See `docs/plans/2024-12-17-onlyoffice-integration-design.md` for full design.
 
 See `docs/plans/2024-12-17-onlyoffice-integration-design.md` for full design.
 
-### Task 2.4: PDF Viewer Integration ⬜
+### Task 2.4: LaTeX Editor Integration ⬜
+**Purpose**: Support LaTeX users (10-30% of researchers, 70-90% in STEM math fields)
+
+**Why LaTeX:**
+- Required by CS/Math/Physics conferences (ACM, IEEE, arXiv)
+- Better equation support than Word
+- Version control friendly (plain text)
+- Combined with Word: covers ~95% of researchers
+
+**Editor Options:**
+- Monaco Editor (VS Code's editor) - familiar, powerful
+- CodeMirror - lightweight, customizable
+- Recommendation: Monaco (already in VS Code)
+
+**Implementation Tasks:**
+- [ ] Create Custom Editor Provider for *.tex files
+- [ ] Set up Monaco with LaTeX syntax highlighting
+- [ ] Add live PDF preview panel (compile on save)
+- [ ] Integrate LaTeX compiler (texlive or tectonic)
+- [ ] BibTeX file support and autocomplete
+- [ ] Wire up same Inline AI (Cmd+K) as OnlyOffice
+
+**LaTeX-Specific AI Commands:**
+| Command | Description |
+|---------|-------------|
+| Fix compilation | Fix LaTeX errors |
+| Add equation | Generate LaTeX math |
+| Format table | Convert to LaTeX table syntax |
+| Add citations | Insert \cite{} with BibTeX |
+| Expand section | Elaborate with proper LaTeX |
+
+See `docs/design-choices.md` section 10 for rationale.
+
+### Task 2.5: PDF Viewer Integration ⬜
 - [ ] Integrate PDF.js for viewing
 - [ ] Add annotation support (sidecar JSON files)
 - [ ] Connect to library-mcp for context
 
-### Task 2.5: Claude Code Chat Integration ⬜
+### Task 2.6: Chat Panel Integration ⬜
 - [ ] Create chat panel webview
-- [ ] Connect to Claude Code CLI
+- [ ] Connect to Claude Code (or OpenCode) CLI
 - [ ] Show research context in chat
 
 ---
