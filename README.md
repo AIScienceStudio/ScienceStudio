@@ -1,218 +1,233 @@
-# ScienceStudio 🧬
+# ScienceStudio
 
-> **An IDE for the Mind** — Transform how science is written, forever.
+> **An IDE for Research** — Word + LaTeX + AI, local-first.
 
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Status](https://img.shields.io/badge/Status-Pre--Alpha-orange)
-![Stack](https://img.shields.io/badge/Stack-TypeScript%20%7C%20Python%20%7C%20React-blue)
 ![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Mac%20%7C%20Linux-lightgrey)
 
-## What if research writing worked like research thinking?
+## What is ScienceStudio?
 
-Scientists don't think in linear documents. They think in **connections** — between ideas, papers, evidence, and arguments. 
+A research-focused IDE that gives AI coding agents research superpowers. Instead of building another AI, we use **Claude Code or OpenCode as the brain** and build research tools (MCP servers) that any agent can use.
 
-We ask brilliant researchers to solve humanity’s hardest problems using the same tools designed for office memos (Microsoft Word). Word treats a 100-page thesis like a flat string of characters. It has no concept of a hypothesis, it breaks when you handle complex citations, and it has no memory of the 50 PDFs you just read.
+**Supports both Word AND LaTeX** — covering ~95% of academic researchers.
 
-ScienceStudio replaces the "Word + Zotero + 20 Chrome Tabs" workflow with a single, programmable environment. It treats your research paper not as a document, but as a codebase—structured, version-controlled, and logically verified.
-
-## The Philosophy
-Programmers moved from Notepad to VS Code because they needed tools that understood the structure of their code (definitions, references, refactoring). ScienceStudio brings this same leap to researchers.
-
-We prioritize Local-First Intelligence. Your unpublished data is your most valuable asset. ScienceStudio runs entirely on your machine—no cloud uploads, no external model training.
-
-## How it works - The B.R.P.W. Loop™
-
-Research isn't typing — it's a cognitive loop. We've built our entire system around how scientists actually work:
-
-<div align="center">
-
-### **Brainstorm → Read → Plan → Write**
-
-</div>
-
-<table>
-<tr>
-<td width="25%" align="center">
-<h3> Brainstorm</h3>
-<p>Explore ideas with an AI that knows your entire research context</p>
-</td>
-<td width="25%" align="center">
-<h3> Read</h3>
-<p>100 PDFs become a queryable knowledge graph, not a folder of files</p>
-</td>
-<td width="25%" align="center">
-<h3> Plan</h3>
-<p>Structure arguments before writing — like architects before building</p>
-</td>
-<td width="25%" align="center">
-<h3> Write</h3>
-<p>Focus on ideas while AI handles citations, consistency, and logic</p>
-</td>
-</tr>
-</table>
-
-## Built for How Science Really Works
-
-<table>
-<tr>
-<td width="50%">
-
-### Traditional Tools Force You To:
-- Alt-tab between 20 PDF windows
-- Copy-paste citations manually
-- Ctrl+F through hundreds of pages
-- Hold your entire argument in your head
-- Lose flow switching between apps
-
-</td>
-<td width="50%">
-
-### ScienceStudio Lets You:
-- Query your entire library instantly
-- Click any citation to see its source
-- Ask "What contradicts this claim?"
-- Visualize argument structure
-- Stay in flow with unified workspace
-
-</td>
-</tr>
-</table>
-
-## Powerful Tech, Invisible Complexity
+## Architecture
 
 ```
-Your Workspace                           Under the Hood
-─────────────                           ──────────────
-                                       
-Clean writing space      ←→         VS Code Extension Platform
-Smart PDF library        ←→         LanceDB (10k papers, 100MB RAM)
-Research assistant       ←→         Local AI with your full context
-Semantic search         ←→         Knowledge graph, not keyword matching
-Living documents        ←→         Git-versioned, structured data
+┌─────────────────────────────────────────────────────┐
+│  VS Code Extension                                  │
+│  ├── OnlyOffice (.docx) ─┬─ Inline AI (Cmd+K)       │
+│  ├── LaTeX Editor (.tex) ─┘                         │
+│  ├── PDF Library                                    │
+│  └── Focus Mode (hides VS Code complexity)          │
+├─────────────────────────────────────────────────────┤
+│  Choose Your Brain:                                 │
+│  ┌─────────────┐  ┌─────────────┐                   │
+│  │ Claude Code │  │  OpenCode   │                   │
+│  │ (Claude)    │  │ GPT/Gemini/ │                   │
+│  │ [Default]   │  │ LLaMA/etc   │                   │
+│  └──────┬──────┘  └──────┬──────┘                   │
+│         └────────┬───────┘                          │
+└──────────────────┼──────────────────────────────────┘
+                   │ MCP Protocol
+                   ▼
+┌─────────────────────────────────────────────────────┐
+│  MCP Servers (Research Tools)                       │
+│  ├── pdf-mcp: Read and extract from PDFs            │
+│  ├── library-mcp: Vector search over your papers    │
+│  ├── citation-mcp: Find papers, get BibTeX          │
+│  └── docx-mcp: Read/write Word documents            │
+└─────────────────────────────────────────────────────┘
 ```
 
-**Your data never leaves your machine.** No cloud uploads. No training on your unpublished work. Complete privacy.
+## Key Features
 
-## See It In Action
+### Inline AI Assistant (Cmd+K)
 
-```python
-# Traditional way: 
-# 1. Remember Smith et al. mentioned something about cognitive load
-# 2. Open 15 PDFs trying to find it
-# 3. Manually copy the citation
-# 4. Hope you formatted it correctly
+Select text in your document, press `Cmd+K`, and get research-powered AI:
 
-# ScienceStudio way:
-> "What did Smith's team conclude about cognitive load in children?"
+| Command | What it does |
+|---------|--------------|
+| **Refine** | Polish your writing |
+| **Expand** | Elaborate on the point |
+| **Add citations** | Find supporting papers from your library |
+| **Find sources** | Search Semantic Scholar for new papers |
+| **Verify claim** | Check if your sources support the claim |
+| **Strengthen** | Add evidence and improve reasoning |
 
-AI: Found in Smith et al. (2023), p. 45: "Cognitive load significantly 
-    impairs moral reasoning in children aged 8-10 (F(2,98) = 7.34, p < .001)"
-    
-    [View PDF] [Insert Citation] [See Related Papers]
+### Two Editors, One Experience
+
+| Format | Editor | Users |
+|--------|--------|-------|
+| **.docx** (Word) | OnlyOffice | Bio, Med, Social Sciences (~60-70%) |
+| **.tex** (LaTeX) | Monaco | Math, Physics, CS (~10-30%, 70-90% in STEM) |
+
+**Both editors share the same inline AI and MCP tools.**
+
+### Choose Your AI Brain
+
+| Agent | Models | Best For |
+|-------|--------|----------|
+| **Claude Code** (default) | Claude 3.5/4 | Best agent orchestration |
+| **OpenCode** | GPT-4, Gemini, LLaMA, 75+ | User choice, open-source |
+
+### Research MCP Servers
+
+```bash
+# Search your paper library
+> library_search("cognitive load affects memory")
+Found 3 papers: Smith 2023, Jones 2022, ...
+
+# Look up a paper by DOI
+> citation_lookup_doi("10.1038/nature12373")
+Title: "Structural basis of...", Authors: ...
+
+# Extract sections from a PDF
+> pdf_extract_sections("/path/to/paper.pdf")
+Abstract: "...", Methods: "...", Results: "..."
 ```
+
+## Why ScienceStudio?
+
+| Tool | Word | LaTeX | AI | Local-First |
+|------|------|-------|-----|-------------|
+| MS Word | ✅ | ❌ | ✅ Copilot | ❌ |
+| Google Docs | ✅ | ❌ | ✅ Gemini | ❌ |
+| Overleaf | ❌ | ✅ | ❌ | ❌ |
+| **ScienceStudio** | ✅ | ✅ | ✅ | ✅ |
+
+**Our differentiator:** Only tool that supports BOTH Word AND LaTeX with AI + local-first + agent-agnostic.
 
 ## Quick Start
 
+### 1. Clone the repo
 ```bash
-# Clone and enter the repository
 git clone https://github.com/AIScienceStudio/ScienceStudio.git
 cd ScienceStudio
-
-# Install dependencies
-npm install
-
-# Build the extension
-npm run compile
-
-# Launch ScienceStudio
-# Press F5 in VS Code to experience the future of research
 ```
 
-## Join the Revolution
+### 2. Install the VS Code extension
+```bash
+cd extensions/sciencestudio-core
+npm install
+npm run compile
+```
 
-### Phase 1: Foundation 🏗️ **← We are here**
-- [x] Architecture & vision defined
-- [ ] Core editor with focus mode
-- [ ] PDF viewer integration
-- [ ] Basic document structure
+### 3. Set up MCP servers
+```bash
+# Create Python environment
+conda create -n sciencestudio python=3.12
+conda activate sciencestudio
 
-### Phase 2: Intelligence 🧠
-- [ ] Semantic PDF parsing
-- [ ] Knowledge graph creation
-- [ ] AI research assistant
-- [ ] Smart citations
+# Install MCP servers
+cd mcp-servers/pdf-mcp && pip install -r requirements.txt
+cd ../library-mcp && pip install -r requirements.txt
+cd ../citation-mcp && pip install -r requirements.txt
+cd ../docx-mcp && pip install -r requirements.txt
+```
 
-### Phase 3: Workflows 🔄
-- [ ] Full B.R.P.W. loop implementation
-- [ ] Collaborative features
-- [ ] Export to any format
-- [ ] Plugin ecosystem
+### 4. Register MCP servers with your agent
 
-## Why This Matters
+**For Claude Code** (`~/.claude.json`):
+```json
+{
+  "mcpServers": {
+    "pdf": { "command": "python", "args": ["/path/to/mcp-servers/pdf-mcp/server.py"] },
+    "library": { "command": "python", "args": ["/path/to/mcp-servers/library-mcp/server.py"] },
+    "citation": { "command": "python", "args": ["/path/to/mcp-servers/citation-mcp/server.py"] },
+    "docx": { "command": "python", "args": ["/path/to/mcp-servers/docx-mcp/server.py"] }
+  }
+}
+```
 
-<div align="center">
-<table>
-<tr>
-<td align="center" width="33%">
-<h3>🔬 For Science</h3>
-Accelerate discovery by letting researchers focus on ideas, not formatting
-</td>
-<td align="center" width="33%">
-<h3>🎓 For Students</h3>
-Learn to think systematically with tools that guide good research practices
-</td>
-<td align="center" width="33%">
-<h3>🌍 For Humanity</h3>
-When researchers work faster and better, breakthrough discoveries come sooner
-</td>
-</tr>
-</table>
-</div>
+**For OpenCode** — same format in `~/.config/opencode/opencode.json`
 
-## 👥 Built by Researchers, for Researchers
+### 5. Launch
+```bash
+code --extensionDevelopmentPath=/path/to/extensions/sciencestudio-core
+```
 
-We're not just building software — we're building the future of scientific communication.
+## Roadmap
 
-### Core Contributors Wanted
+### Phase 1: Foundation (Current)
+- [x] Project architecture defined
+- [x] MCP servers implemented (pdf, library, citation, docx)
+- [x] VS Code extension skeleton
+- [ ] OnlyOffice integration
+- [ ] Inline AI assistant (Cmd+K)
 
-- **  UI/UX Designer** — Make complexity feel simple
-- **  AI/ML Engineer** — Build the research assistant
-- **  Research Tool Developer** — Create citation and library features
-- **  Systems Developer** — Optimize for large document handling
+### Phase 2: Editors
+- [ ] OnlyOffice WebView for .docx
+- [ ] LaTeX editor with PDF preview
+- [ ] PDF viewer with annotations
 
+### Phase 3: Intelligence
+- [ ] Full inline AI with MCP tools
+- [ ] Citation autocomplete
+- [ ] Claim verification
+- [ ] Smart search across library
 
-## 🤝 Community
+### Phase 4: Polish
+- [ ] Focus Mode (hide VS Code complexity)
+- [ ] One-click installer
+- [ ] Cloud sync (optional)
 
-<div align="center">
+## Documentation
 
-**This isn't just a project — it's a movement.**
+| Doc | Description |
+|-----|-------------|
+| [CLAUDE.md](CLAUDE.md) | Project overview and setup |
+| [Design Choices](docs/design-choices.md) | Architecture decisions |
+| [Market Research](docs/market-research.md) | Word vs LaTeX usage data |
+| [OnlyOffice Design](docs/plans/2024-12-17-onlyoffice-integration-design.md) | Editor integration plan |
+| [Tasks](plan/tasks.md) | Current development tasks |
 
-Join researchers worldwide who believe science deserves better tools.
+## Project Structure
 
-[Discord](https://discord.gg/sciencestudio) • [Email](mailto:team@sciencestudio.ai) • [Twitter](https://twitter.com/sciencestudio)
+```
+ScienceStudio/
+├── extensions/
+│   └── sciencestudio-core/     # VS Code extension
+├── mcp-servers/
+│   ├── pdf-mcp/                # PDF extraction
+│   ├── library-mcp/            # Vector search (ChromaDB)
+│   ├── citation-mcp/           # Semantic Scholar API
+│   └── docx-mcp/               # Word document handling
+├── docs/
+│   ├── design-choices.md
+│   ├── market-research.md
+│   └── plans/
+└── plan/
+    └── tasks.md
+```
 
-</div>
+## Target Users
 
-## Deep Dive
+**Primary:** PhD students and academic researchers
+- Psychology, Biology, Medicine (Word users)
+- Math, Physics, CS (LaTeX users)
 
-- **[Vision & Philosophy](docs/pitch.md)** — Why we're building this
-- **[Functional Spec](docs/functional-specification.md)** — What we're building
-- **[Technical Design](docs/DESIGN.md)** — How we're building it
-- **[Design Choices](docs/design-choices.md)** — Key decisions explained
-- **[Roadmap](docs/roadmap.md)** — Where we're going
+**Use case:** Manage 50-100+ PDFs, write papers, find evidence, verify citations.
+
+## Contributing
+
+We're building the future of research tools. Contributions welcome!
+
+- **UI/UX** — Make OnlyOffice/LaTeX integration seamless
+- **AI/ML** — Improve MCP server capabilities
+- **Research** — Help us understand researcher workflows
 
 ## License
 
-MIT © 2024 AIScienceStudio — Open source forever, because knowledge should be free.
+MIT — Open source forever.
 
 ---
 
 <div align="center">
-<h3>Ready to transform how science is written?</h3>
-<br>
-<a href="https://github.com/AIScienceStudio/ScienceStudio/fork">
-<img src="https://img.shields.io/badge/Fork-This_Repo-brightgreen?style=for-the-badge" alt="Fork This Repo">
-</a>
-<br><br>
-<b>Star this repo to follow our journey</b>
+
+**Your data stays on your machine. Always.**
+
+[Documentation](docs/) · [Issues](https://github.com/AIScienceStudio/ScienceStudio/issues) · [Discussions](https://github.com/AIScienceStudio/ScienceStudio/discussions)
+
 </div>
