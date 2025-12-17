@@ -60,6 +60,65 @@
 
 **Our differentiator:** Only tool that supports BOTH Word AND LaTeX with AI assistance AND local-first architecture.
 
+---
+
+## Why Not Notion or Obsidian?
+
+The difference comes down to one word: **Output.**
+
+### The "Almost, But Not Quite" Competitors
+
+Everything else fails on one of our three core pillars: **IDE-Grade**, **Native `.docx`**, or **Agentic**.
+
+| Product | The Limitation (Why it fails our user) |
+|---------|----------------------------------------|
+| **Notion** | **It's a Wiki, not a Document.** Creates "Blocks," not "Pages." Cannot format to strict APA/Harvard guidelines with 1-inch margins and page breaks. Impossible to submit a Notion doc to a journal. Cloud-only (HIPAA/GDPR risk). |
+| **Obsidian** | **It's for Notes (PKM), not Publishing.** Markdown is amazing for *thinking*, but terrible for *publishing* strict academic papers. "Pandoc Hell" converting to formatted `.docx`. No "Project" view—doesn't understand relationships between Data, Scripts, and Manuscript. |
+| **Zettlr** | **Markdown Only.** Forces researchers to write in Markdown and "export" to Word. Breaks formatting, comments, and track-changes. "Note Taking" app, not "Production" environment. |
+| **Cursor / Windsurf** | **Code Only.** Fantastic Agentic IDEs, but view PDF or `.docx` as binary blobs. Cannot "refactor" a paragraph of text—optimized for ASTs of code, not semantic arguments. |
+| **OnlyOffice Desktop** | **Not an IDE.** Has an "AI Plugin" (ChatGPT/LM Studio sidebar), but it's just a chatbot. No "Project View," Git integration, or programmable API to build a "Research Loop". |
+| **Overleaf** | **LaTeX Only.** Alienates the 90% of researchers (Bio, Psych, Med) who *must* use Microsoft Word. Cloud-only (privacy risk). |
+
+### The Key Insight
+
+- **Obsidian** helps you *remember*.
+- **ScienceStudio** helps you *produce*.
+
+Because we use **OnlyOffice**, we are WYSIWYG (What You See Is What You Get). The file you see on screen is *exactly* the file the professor receives. No conversion errors.
+
+### Why Our Stack is Unique
+
+The specific combination of **VS Code (Shell)** + **OnlyOffice (Canvas)** + **Local Agent (Brain)** has never been built before.
+
+- **The "Science Writer" Extension:** A VS Code extension exists, but it's just snippets for Markdown. Not a WYSIWYG editor.
+- **The "LM Studio" Plugin:** OnlyOffice has an LLM plugin, but it creates a *chatbot*, not an *Agent*. Cannot "Plan" a thesis or "Verify" citations against a library.
+
+### The OnlyOffice Strategic Advantage
+
+Using **OnlyOffice** instead of building a ProseMirror editor from scratch:
+
+**Pros:**
+- **Zero Format Risk:** OnlyOffice uses `.docx` (OOXML) natively. 100% Word compatibility guaranteed.
+- **Dev Time Saved:** Don't build toolbar, ruler, spellcheck, or comments—all built-in.
+- **Bonus:** Excel editing for data files comes free.
+
+**Cons (Solved):**
+- **"Black Box" Problem:** Can't inject HTML like ProseMirror.
+- **Solution:** Use the **OnlyOffice Connector API** to send commands: `connector.executeCommand("InsertText", { text: "..." })`
+
+### The Pitch Response
+
+If anyone asks "Why not Obsidian?", say:
+
+> "Obsidian is for taking notes. ScienceStudio is for publishing science.
+> We use the engine of VS Code to manage your data, and the engine of OnlyOffice to guarantee your formatting. It is the only Local-First environment where you can code your analysis and write your paper in the same window."
+
+**Positioning:** We are building **"Cursor for Scientists."** It does not exist, and the market is wide open.
+
+### Reference
+
+- [Top 7 Open Source AI Agent Frameworks (YouTube)](https://www.youtube.com/watch?v=F8NKVhkZZWI) - Validates that current frameworks (CrewAI, AutoGen) are raw tools for developers, not polished IDEs for end-users like researchers.
+
 ### Target User Segments
 
 **Segment 1: Psychology/Biology PhD (Word users)**

@@ -6,6 +6,9 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# data
+data
+
 # VS Code Extension Development
 out/
 dist/
