@@ -212,27 +212,31 @@ See `docs/plans/2024-12-17-onlyoffice-integration-design.md` for full implementa
 
 ## 5. AI Integration Approach
 
-### Decision: Claude Code as Brain + MCP Research Tools
+### Decision: Agent-Agnostic Architecture with MCP Research Tools
 
-**PIVOT (December 2024)**: Instead of building a custom agentic AI system, we leverage Claude Code as the orchestration brain.
+**PIVOT (December 2024)**: Instead of building a custom agentic AI system, we leverage existing CLI agents as the brain and build MCP tools they can use.
 
 #### Why NOT Build a Custom Agent
 
 **Rejected Approach**: Custom Python agent with LangChain/LangGraph
-- Would reinvent what Claude Code already does (planning, tool use, multi-step execution)
+- Would reinvent what CLI agents already do (planning, tool use, multi-step execution)
 - Significant development and maintenance burden
-- Would always be playing catch-up with Claude's capabilities
+- Would always be playing catch-up with LLM capabilities
 
-#### Why Claude Code as Brain
+#### Agent-Agnostic Design
 
-**Chosen Approach**: Use Claude Code for all agentic orchestration
+**Chosen Approach**: Support multiple CLI agents via MCP protocol
 
-**Benefits**:
-1. **Already Has Planning**: Claude Code plans tasks, breaks them down, iterates
-2. **Already Has Tool Use**: File read/write/edit, bash commands, search
-3. **Already Has Memory**: Context management across conversations
-4. **Free Updates**: As Claude improves, ScienceStudio gets smarter
-5. **Battle-Tested**: Used by thousands of developers daily
+| Agent | LLM Provider | Best For |
+|-------|--------------|----------|
+| **Claude Code** (default) | Anthropic Claude | Best agent orchestration |
+| **OpenCode** (alternative) | GPT-4, Gemini, LLaMA, 75+ models | User choice, open-source models |
+
+**Why Agent-Agnostic:**
+1. **User Choice**: Some prefer GPT-4, some prefer Claude, some want local models
+2. **No Lock-in**: Not dependent on any single provider
+3. **MCP is Standard**: Our tools work with any MCP-compatible agent
+4. **Future-Proof**: New agents can use our MCP servers immediately
 
 #### Architecture
 
@@ -240,28 +244,47 @@ See `docs/plans/2024-12-17-onlyoffice-integration-design.md` for full implementa
 ┌─────────────────────────────────────────────────────┐
 │  ScienceStudio UI Layer                             │
 │  - VS Code Extension                                │
-│  - ProseMirror for .docx editing                    │
+│  - OnlyOffice for .docx editing                     │
 │  - PDF Library view                                 │
-│  - Research-focused interface                       │
+│  - Inline AI assistant (Cmd+K)                      │
 │  - Focus Mode (hides VS Code complexity)            │
-└─────────────────────┬───────────────────────────────┘
-                      │
-                      ▼
+├─────────────────────────────────────────────────────┤
+│  Choose Your Brain:                                 │
+│  ┌─────────────┐  ┌─────────────┐                   │
+│  │ Claude Code │  │  OpenCode   │                   │
+│  │ (Claude)    │  │ (Any LLM)   │                   │
+│  │ [Default]   │  │ GPT/Gemini/ │                   │
+│  │             │  │ LLaMA/etc   │                   │
+│  └──────┬──────┘  └──────┬──────┘                   │
+│         └────────┬───────┘                          │
+└──────────────────┼──────────────────────────────────┘
+                   │ MCP Protocol
+                   ▼
 ┌─────────────────────────────────────────────────────┐
-│  Claude Code = THE BRAIN                            │
-│  (No custom agent needed)                           │
-│                                                     │
-│  + MCP Servers for Research Superpowers:            │
+│  MCP Servers (Research Tools - Agent Agnostic)      │
 │    ├── pdf-mcp: Semantic PDF extraction             │
-│    ├── citation-mcp: Paper lookup & verification   │
+│    ├── citation-mcp: Paper lookup & verification    │
 │    ├── library-mcp: Vector search over papers       │
-│    └── docx-mcp: Word document manipulation        │
+│    └── docx-mcp: Word document manipulation         │
 └─────────────────────────────────────────────────────┘
 ```
 
+#### Supported Agents
+
+**Claude Code (Recommended)**
+- Best agentic capabilities
+- Superior planning and reasoning
+- Anthropic subscription required
+
+**OpenCode (Alternative)**
+- Supports 75+ LLM providers
+- Use GPT-4, Gemini, or local models (LLaMA, Mistral)
+- BYO API keys
+- Good for users who prefer other providers
+
 #### MCP Servers (What We Build)
 
-Instead of building an agent, we build **research tools** that Claude Code can use:
+Instead of building an agent, we build **research tools** that any MCP-compatible agent can use:
 
 1. **pdf-mcp**: Extract text, sections, figures, tables from PDFs
 2. **citation-mcp**: Query Semantic Scholar, CrossRef, DOI lookup

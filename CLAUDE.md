@@ -4,7 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-ScienceStudio is a research-focused IDE that gives Claude Code research superpowers through MCP servers. Instead of building a custom AI agent, we use **Claude Code as the brain** and build research tools (MCP servers) that Claude can use to help researchers.
+ScienceStudio is a research-focused IDE that gives AI coding agents research superpowers through MCP servers. Instead of building a custom AI agent, we use **existing CLI agents as the brain** and build research tools (MCP servers) that any MCP-compatible agent can use.
+
+**Supported Brains:**
+- **Claude Code** (default, recommended) - Anthropic's Claude
+- **OpenCode** (alternative) - Supports GPT-4, Gemini, Claude, LLaMA, and 75+ other models
 
 ### Target Users
 - PhD students and academic researchers (primary focus: psychology, biology, medicine)
@@ -18,7 +22,7 @@ Psychology PhD student (Andy's girlfriend) who needs to:
 - Find evidence across papers
 - Verify and manage citations
 
-## Architecture: Claude Code as Brain
+## Architecture: Agent-Agnostic Brain
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -27,16 +31,25 @@ Psychology PhD student (Andy's girlfriend) who needs to:
 │  │   ├── OnlyOffice WebView for .docx editing       │
 │  │   ├── PDF Library view                           │
 │  │   └── Focus Mode (hides VS Code complexity)      │
-│  └── Claude Code Integration                        │
+│  └── Agent Integration (user's choice)              │
 │      └── Chat interface for research tasks          │
 ├─────────────────────────────────────────────────────┤
 │  OnlyOffice Document Server (Local Docker)          │
 │  └── Full Word compatibility, track changes, eqns   │
-└─────────────────────┬───────────────────────────────┘
-                      │ MCP Protocol
-                      ▼
+├─────────────────────────────────────────────────────┤
+│  Choose Your Brain:                                 │
+│  ┌─────────────┐  ┌─────────────┐                   │
+│  │ Claude Code │  │  OpenCode   │                   │
+│  │ (Claude)    │  │ (Any LLM)   │                   │
+│  │ [Default]   │  │ GPT/Gemini/ │                   │
+│  │             │  │ LLaMA/etc   │                   │
+│  └──────┬──────┘  └──────┬──────┘                   │
+│         └────────┬───────┘                          │
+└──────────────────┼──────────────────────────────────┘
+                   │ MCP Protocol
+                   ▼
 ┌─────────────────────────────────────────────────────┐
-│  MCP Servers (Research Tools for Claude)            │
+│  MCP Servers (Research Tools - Agent Agnostic)      │
 │  ├── pdf-mcp: Semantic PDF extraction               │
 │  ├── library-mcp: Vector search over papers         │
 │  ├── citation-mcp: Paper lookup & verification      │
@@ -46,7 +59,7 @@ Psychology PhD student (Andy's girlfriend) who needs to:
 
 **Editor Choice**: OnlyOffice for pixel-perfect Word compatibility. See `docs/design-choices.md` section 4.
 
-**Key Insight**: We don't build an agent - Claude Code IS the agent. We build research tools (MCP servers) that give Claude research superpowers.
+**Key Insight**: We don't build an agent - we build research tools (MCP servers) that work with ANY MCP-compatible agent. Users choose their preferred brain.
 
 ## Project Structure
 
@@ -131,8 +144,10 @@ cd ../citation-mcp && pip install -r requirements.txt
 cd ../docx-mcp && pip install -r requirements.txt
 ```
 
-### Register MCP Servers with Claude Code
-Add to `~/.claude.json` or Claude Code config:
+### Register MCP Servers with Your Agent
+
+#### Option 1: Claude Code (Recommended)
+Add to `~/.claude.json`:
 ```json
 {
   "mcpServers": {
@@ -156,32 +171,79 @@ Add to `~/.claude.json` or Claude Code config:
 }
 ```
 
+#### Option 2: OpenCode (For GPT/Gemini/LLaMA users)
+OpenCode supports 75+ LLM providers. Install and configure:
+
+```bash
+# Install OpenCode
+# See: https://github.com/opencode-ai/opencode
+
+# Configure your preferred model provider
+opencode config set provider openai  # or: anthropic, google, ollama, etc.
+opencode config set api_key YOUR_API_KEY
+```
+
+Add MCP servers to `~/.config/opencode/opencode.json`:
+```json
+{
+  "mcpServers": {
+    "pdf": {
+      "command": "python",
+      "args": ["/path/to/ScienceStudio/mcp-servers/pdf-mcp/server.py"]
+    },
+    "library": {
+      "command": "python",
+      "args": ["/path/to/ScienceStudio/mcp-servers/library-mcp/server.py"]
+    },
+    "citation": {
+      "command": "python",
+      "args": ["/path/to/ScienceStudio/mcp-servers/citation-mcp/server.py"]
+    },
+    "docx": {
+      "command": "python",
+      "args": ["/path/to/ScienceStudio/mcp-servers/docx-mcp/server.py"]
+    }
+  }
+}
+```
+
+**Supported Models via OpenCode:**
+| Provider | Models |
+|----------|--------|
+| OpenAI | GPT-4, GPT-4o, GPT-3.5 |
+| Anthropic | Claude 3.5, Claude 3 |
+| Google | Gemini Pro, Gemini Ultra |
+| Ollama | LLaMA, Mistral, CodeLlama (local) |
+| + 75 more | See OpenCode docs |
+
 ## Current Status (December 2024)
 
 ### Completed ✅
 - Project documentation (functional spec, roadmap, design choices)
 - VS Code extension skeleton with Focus Mode
 - MCP server implementations (pdf, library, citation, docx)
-- Architecture pivot to Claude Code as brain
+- Architecture: Agent-agnostic brain (Claude Code default, OpenCode alternative)
+- OnlyOffice integration design with inline AI assistant
 
 ### In Progress 🔄
 - Testing MCP servers with real PDFs
-- Registering MCP servers with Claude Code
+- OnlyOffice Docker setup
 
 ### Next Steps 📋
 1. Install MCP server dependencies
 2. Test each MCP server individually
-3. Register with Claude Code config
-4. Test end-to-end workflow with real research PDFs
-5. Build out ProseMirror integration for .docx editing
+3. Register with Claude Code (or OpenCode) config
+4. Set up OnlyOffice Document Server
+5. Build inline AI assistant (Cmd+K)
 
 ## Key Principles
 
-1. **Claude Code is the Brain**: Don't reinvent the agent - use Claude Code
-2. **MCP Servers are Tools**: Build research-specific tools Claude can use
-3. **Local-First**: All processing on user's machine by default
-4. **Perfect .docx Round-Trip**: Never break Word compatibility
-5. **Focus Mode**: Hide VS Code complexity for non-programmer users
+1. **Agent-Agnostic**: MCP servers work with Claude Code, OpenCode, or any MCP-compatible agent
+2. **User Choice**: Default to Claude Code, but support GPT/Gemini/LLaMA via OpenCode
+3. **MCP Servers are Tools**: Build research-specific tools any agent can use
+4. **Local-First**: All processing on user's machine by default
+5. **Perfect .docx Round-Trip**: Never break Word compatibility (via OnlyOffice)
+6. **Focus Mode**: Hide VS Code complexity for non-programmer users
 
 ## Important Notes
 

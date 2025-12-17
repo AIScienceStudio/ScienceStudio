@@ -1,24 +1,32 @@
 # ScienceStudio Development Plan & Tasks
 
-## 🧠 Architecture: Claude Code as Brain
+## 🧠 Architecture: Agent-Agnostic Brain
 
 ```
 ┌─────────────────────────────────────────────────────┐
 │  ScienceStudio UI Layer                             │
 │  ├── VS Code Extension                              │
 │  │   ├── OnlyOffice WebView for .docx editing       │
+│  │   ├── Inline AI Assistant (Cmd+K)                │
 │  │   ├── PDF Library view                           │
 │  │   └── Focus Mode (hides complexity)              │
-│  └── Claude Code Integration                        │
-│      └── Chat interface for research tasks          │
 ├─────────────────────────────────────────────────────┤
 │  OnlyOffice Document Server (Local Docker)          │
 │  └── Full Word compatibility, track changes, eqns   │
-└─────────────────────┬───────────────────────────────┘
-                      │ MCP Protocol
-                      ▼
+├─────────────────────────────────────────────────────┤
+│  Choose Your Brain:                                 │
+│  ┌─────────────┐  ┌─────────────┐                   │
+│  │ Claude Code │  │  OpenCode   │                   │
+│  │ (Claude)    │  │ (Any LLM)   │                   │
+│  │ [Default]   │  │ GPT/Gemini/ │                   │
+│  │             │  │ LLaMA/etc   │                   │
+│  └──────┬──────┘  └──────┬──────┘                   │
+│         └────────┬───────┘                          │
+└──────────────────┼──────────────────────────────────┘
+                   │ MCP Protocol
+                   ▼
 ┌─────────────────────────────────────────────────────┐
-│  MCP Servers (Research Tools for Claude)            │
+│  MCP Servers (Research Tools - Agent Agnostic)      │
 │  ├── pdf-mcp: Semantic PDF extraction               │
 │  ├── citation-mcp: Paper lookup & verification      │
 │  ├── library-mcp: Vector search over papers         │
@@ -26,9 +34,13 @@
 └─────────────────────────────────────────────────────┘
 ```
 
-**Key Insight**: We don't build an agent - Claude Code IS the agent. We build research tools (MCP servers) that give Claude research superpowers.
+**Key Insight**: We don't build an agent - we build research tools (MCP servers) that work with ANY MCP-compatible agent. Users choose their preferred brain.
 
-**Editor Choice**: OnlyOffice for pixel-perfect Word compatibility (track changes, equations, sections). See `docs/plans/2024-12-17-onlyoffice-integration-design.md`.
+**Supported Brains:**
+- **Claude Code** (default) - Best agent orchestration (Anthropic Claude)
+- **OpenCode** (alternative) - GPT-4, Gemini, LLaMA, Mistral, 75+ models
+
+**Editor Choice**: OnlyOffice for pixel-perfect Word compatibility. See `docs/plans/2024-12-17-onlyoffice-integration-design.md`.
 
 ---
 
