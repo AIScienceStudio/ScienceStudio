@@ -76,6 +76,25 @@ ScienceStudio is a research-focused IDE that bridges the gap between traditional
 - **Citation Sidebar**: Quick access to bibliography
 - **AI Chat Panel**: Context-aware assistance
 
+### 6. Citation Management System
+- **BibTeX Integration**: 
+  - Real-time monitoring of references.bib file
+  - Automatic parsing and indexing of citations
+  - Export bibliography in multiple formats
+- **Smart Citation Autocomplete**:
+  - Trigger with "@" symbol in editor
+  - Search by author, year, title, or keywords
+  - Preview citation format before insertion
+- **Citation Nodes**: 
+  - Immutable objects in document (not plain text)
+  - Preserve citation metadata and linking
+  - One-click navigation to source PDF
+- **PDF Annotation System**:
+  - Sidecar JSON files (filename.pdf.json)
+  - Preserve original PDFs untouched
+  - Git-versioned annotations and highlights
+  - Sync between PDF viewer and document citations
+
 ## Key Differentiators
 
 1. **Semantic Understanding**: Not just text editing, but understanding research document structure

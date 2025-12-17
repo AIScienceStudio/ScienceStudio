@@ -1,0 +1,103 @@
+# Research Context
+
+This file serves as the global memory for your AI research assistant. It helps maintain consistency across your entire project and ensures the AI understands your specific research context.
+
+## Project Information
+
+- **Title**: [Your thesis/paper title]
+- **Field**: [e.g., Psychology, Biology, Computer Science]
+- **Type**: [e.g., PhD Thesis, Journal Article, Grant Proposal]
+- **Stage**: [e.g., Planning, Literature Review, Data Collection, Drafting, Revising, Submitted]
+
+## Core Research
+
+### Main Research Question
+[What is the primary question your research aims to answer?]
+
+### Hypothesis
+[State your main hypothesis clearly]
+
+### Supporting Claims
+1. [First supporting argument]
+2. [Second supporting argument]
+3. [Additional arguments...]
+
+### Counter-arguments to Address
+1. [Known objection or alternative explanation]
+2. [Conflicting findings in literature]
+3. [Methodological concerns to acknowledge]
+
+## Methodology
+
+- **Research Design**: [e.g., Experimental, Correlational, Qualitative, Mixed-Methods]
+- **Key Methods**: [List primary research methods]
+- **Sample**: [Describe your participants/subjects]
+- **Analysis Plan**: [Statistical or analytical approaches]
+
+## Writing Guidelines
+
+### Style Preferences
+- **Citation Style**: [e.g., APA 7th, MLA 9th, Chicago 17th]
+- **Tone**: [e.g., Formal academic, Semi-formal, Accessible]
+- **Voice**: [e.g., Passive voice for methods, Active voice for discussion]
+- **Target Audience**: [e.g., Specialists in field, Interdisciplinary, General academic]
+
+### Language Constraints
+- **Preferred Terms**: [Terms to use consistently]
+  - Use "demonstrate" instead of "prove"
+  - Use "participants" instead of "subjects"
+- **Avoided Terms**: [Terms to never use]
+  - Avoid "obviously" or "clearly"
+  - Avoid absolute statements
+- **Field-Specific Conventions**: [Discipline-specific writing rules]
+
+## Target Publication
+
+- **Journal/Conference**: [Where you plan to submit]
+- **Word Limit**: [Maximum word/page count]
+- **Specific Requirements**: [Any unique formatting or content requirements]
+
+## Literature Management
+
+### Key Papers
+1. **[Author, Year]**: [Why this paper is central to your work]
+2. **[Author, Year]**: [Key finding or method you're building on]
+3. **[Author, Year]**: [Contrasting viewpoint or approach]
+
+### Excluded Sources
+- **[Author/Topic]**: [Reason for exclusion - e.g., outdated, methodologically flawed]
+- **[Theory/Approach]**: [Why this perspective is not included]
+
+## Progress Tracking
+
+### Current Focus
+[What section or aspect are you currently working on?]
+
+### Completed Sections
+- [ ] Introduction
+- [ ] Literature Review
+- [ ] Methods
+- [ ] Results
+- [ ] Discussion
+- [ ] Conclusion
+
+### Next Steps
+1. [Immediate next task]
+2. [Following task]
+3. [Future considerations]
+
+## AI Assistant Notes
+
+### Reminders
+- [Any specific instructions for the AI assistant]
+- [Formatting preferences]
+- [Common errors to watch for]
+
+### Context for Suggestions
+- [Background the AI should consider when making suggestions]
+- [Disciplinary norms to follow]
+- [Personal writing weaknesses to help improve]
+
+---
+
+*This file is automatically loaded by ScienceStudio's AI assistant to maintain context across all interactions. Update it regularly to ensure the AI provides the most relevant and consistent support.*

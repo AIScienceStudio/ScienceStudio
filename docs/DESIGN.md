@@ -327,6 +327,76 @@ interface Section {
 - Outdated theories not to reference
 ```
 
+#### Sidecar Annotation Pattern
+```json
+// For PDF: library/smith_2023.pdf
+// Sidecar: library/smith_2023.pdf.json
+
+{
+  "version": "1.0",
+  "metadata": {
+    "id": "smith2023",
+    "title": "The effects of cognitive load on moral judgment",
+    "authors": ["Smith, J.", "Doe, A."],
+    "year": 2023,
+    "journal": "Cognitive Psychology",
+    "doi": "10.1016/j.cogpsych.2023.01.001"
+  },
+  "annotations": [
+    {
+      "id": "ann_001",
+      "type": "highlight",
+      "page": 4,
+      "coordinates": {
+        "x1": 100,
+        "y1": 200,
+        "x2": 300,
+        "y2": 250
+      },
+      "text": "Significant interaction found between cognitive load and moral judgment (F(2,98) = 7.34, p < .001)",
+      "comment": "Key evidence for Hypothesis 2 - use in Methods section",
+      "tags": ["evidence", "statistics", "main-finding"],
+      "created": "2024-01-15T10:30:00Z",
+      "linkedCitations": ["cite_003", "cite_017"]
+    },
+    {
+      "id": "ann_002",
+      "type": "note",
+      "page": 12,
+      "text": "Conflicting with Johnson (2022) findings",
+      "comment": "Address this discrepancy in Discussion",
+      "tags": ["contradiction", "discussion-point"],
+      "created": "2024-01-16T14:22:00Z"
+    }
+  ],
+  "extractedData": {
+    "figures": [
+      {
+        "id": "fig_001",
+        "page": 6,
+        "caption": "Figure 2: Interaction between cognitive load and moral judgment",
+        "path": "extracted/smith_2023_fig2.png"
+      }
+    ],
+    "tables": [
+      {
+        "id": "tab_001",
+        "page": 8,
+        "caption": "Table 1: Demographic characteristics of participants",
+        "data": "extracted/smith_2023_table1.json"
+      }
+    ]
+  },
+  "userMetadata": {
+    "rating": 5,
+    "relevance": "high",
+    "lastRead": "2024-01-16T15:00:00Z",
+    "collections": ["cognitive-load", "main-thesis"],
+    "notes": "Seminal paper for my argument about dual-process theory"
+  }
+}
+```
+
 ---
 
 ## 5. Key Technical Decisions
