@@ -1,0 +1,45 @@
+# ScienceStudio - OnlyOffice Document Server
+#
+# Usage:
+#   docker-compose up -d    # Start OnlyOffice
+#   docker-compose down     # Stop OnlyOffice
+#
+# OnlyOffice will be available at http://localhost:8080
+# The VS Code extension runs its own file server on port 8081
+#
+# For development, you can also run with:
+#   docker-compose up       # See logs in terminal
+
+services:
+  onlyoffice:
+    image: onlyoffice/documentserver:latest
+    container_name: sciencestudio-onlyoffice
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      # Disable JWT for local development (enable in production!)
+      - JWT_ENABLED=false
+      # Allow all domains for embedding (restrict in production)
+      - WOPI_ENABLED=false
+      # CRITICAL: Allow private IP addresses (needed for host.docker.internal)
+      # This allows OnlyOffice to download files from the local file server
+      - ALLOW_PRIVATE_IP_ADDRESS=true
+      - ALLOW_META_IP_ADDRESS=true
+    volumes:
+      # Persist document data
+      - onlyoffice_data:/var/www/onlyoffice/Data
+      - onlyoffice_logs:/var/log/onlyoffice
+    extra_hosts:
+      # Allow container to access host machine (for file server on host)
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/healthcheck"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  onlyoffice_data:
+  onlyoffice_logs:

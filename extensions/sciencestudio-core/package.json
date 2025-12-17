@@ -24,6 +24,16 @@
         "command": "sciencestudio.openLibrary",
         "title": "Open PDF Library",
         "category": "ScienceStudio"
+      },
+      {
+        "command": "sciencestudio.checkOnlyOffice",
+        "title": "Check OnlyOffice Status",
+        "category": "ScienceStudio"
+      },
+      {
+        "command": "sciencestudio.startOnlyOffice",
+        "title": "Start OnlyOffice Server",
+        "category": "ScienceStudio"
       }
     ],
     "customEditors": [
@@ -83,6 +93,21 @@
           "type": "string",
           "default": "${workspaceFolder}/library",
           "description": "Path to PDF library folder"
+        },
+        "sciencestudio.onlyoffice.url": {
+          "type": "string",
+          "default": "http://localhost:8080",
+          "description": "URL of the OnlyOffice Document Server"
+        },
+        "sciencestudio.onlyoffice.fileserverUrl": {
+          "type": "string",
+          "default": "http://localhost:8081",
+          "description": "URL of the file server for document access"
+        },
+        "sciencestudio.onlyoffice.autoStart": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start OnlyOffice Docker container when opening .docx files"
         }
       }
     }
