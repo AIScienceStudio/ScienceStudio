@@ -24,11 +24,14 @@ Psychology PhD student (Andy's girlfriend) who needs to:
 ┌─────────────────────────────────────────────────────┐
 │  ScienceStudio UI Layer                             │
 │  ├── VS Code Extension (sciencestudio-core)         │
-│  │   ├── ProseMirror for .docx editing              │
+│  │   ├── OnlyOffice WebView for .docx editing       │
 │  │   ├── PDF Library view                           │
 │  │   └── Focus Mode (hides VS Code complexity)      │
 │  └── Claude Code Integration                        │
 │      └── Chat interface for research tasks          │
+├─────────────────────────────────────────────────────┤
+│  OnlyOffice Document Server (Local Docker)          │
+│  └── Full Word compatibility, track changes, eqns   │
 └─────────────────────┬───────────────────────────────┘
                       │ MCP Protocol
                       ▼
@@ -40,6 +43,8 @@ Psychology PhD student (Andy's girlfriend) who needs to:
 │  └── docx-mcp: Word document manipulation           │
 └─────────────────────────────────────────────────────┘
 ```
+
+**Editor Choice**: OnlyOffice for pixel-perfect Word compatibility. See `docs/design-choices.md` section 4.
 
 **Key Insight**: We don't build an agent - Claude Code IS the agent. We build research tools (MCP servers) that give Claude research superpowers.
 

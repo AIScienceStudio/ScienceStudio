@@ -6,11 +6,14 @@
 ┌─────────────────────────────────────────────────────┐
 │  ScienceStudio UI Layer                             │
 │  ├── VS Code Extension                              │
-│  │   ├── ProseMirror for .docx editing              │
+│  │   ├── OnlyOffice WebView for .docx editing       │
 │  │   ├── PDF Library view                           │
 │  │   └── Focus Mode (hides complexity)              │
 │  └── Claude Code Integration                        │
 │      └── Chat interface for research tasks          │
+├─────────────────────────────────────────────────────┤
+│  OnlyOffice Document Server (Local Docker)          │
+│  └── Full Word compatibility, track changes, eqns   │
 └─────────────────────┬───────────────────────────────┘
                       │ MCP Protocol
                       ▼
@@ -24,6 +27,8 @@
 ```
 
 **Key Insight**: We don't build an agent - Claude Code IS the agent. We build research tools (MCP servers) that give Claude research superpowers.
+
+**Editor Choice**: OnlyOffice for pixel-perfect Word compatibility (track changes, equations, sections). See `docs/plans/2024-12-17-onlyoffice-integration-design.md`.
 
 ---
 
@@ -128,11 +133,27 @@ Location: `extensions/sciencestudio-core/`
 - Focus Mode implemented
 - PDF Library view registered
 
-### Task 2.2: ProseMirror Integration ⬜
-- [ ] Create custom editor provider for .docx
-- [ ] Set up ProseMirror with academic schema
-- [ ] Handle .docx import/export via docx-mcp
-- [ ] Implement track changes UI
+### Task 2.2: OnlyOffice Integration ⬜
+**Purpose**: Pixel-perfect Word editing with full compatibility
+
+**Setup Tasks**:
+- [ ] Set up OnlyOffice Document Server (Docker)
+- [ ] Create docker-compose.yml for local development
+- [ ] Test Document Server API connectivity
+
+**VS Code Integration Tasks**:
+- [ ] Create Custom Editor Provider for *.docx
+- [ ] Build WebView that embeds OnlyOffice iframe
+- [ ] Implement file open flow (copy to Document Server)
+- [ ] Implement file save flow (callback URL → copy back)
+- [ ] Handle Document Server lifecycle (auto-start/stop)
+
+**UX Tasks**:
+- [ ] Add loading indicator while Document Server starts
+- [ ] Error handling for Document Server crashes
+- [ ] Status bar indicator for connection state
+
+See `docs/plans/2024-12-17-onlyoffice-integration-design.md` for full design.
 
 ### Task 2.3: PDF Viewer Integration ⬜
 - [ ] Integrate PDF.js for viewing

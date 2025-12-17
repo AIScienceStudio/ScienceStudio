@@ -153,28 +153,60 @@ class ResearchAgent:
 
 ## 4. Document Processing Stack
 
-### Decision: ProseMirror + mammoth.js + Pandoc
+### Decision: OnlyOffice Document Server (Embedded)
 
-**ProseMirror** (Editor):
-- True WYSIWYG for researchers
-- Immutable citation nodes
-- Track changes support
-- Academic document schema
+**PIVOT (December 2024)**: After analyzing requirements for PhD researchers who must collaborate with Word users and submit to journals, we chose OnlyOffice over ProseMirror.
 
-**mammoth.js** (Import):
-- Preserves Word formatting
-- Handles comments/track changes
-- Pure JavaScript (easy bundling)
+#### Requirements That Drove This Decision
 
-**Pandoc** (Export):
-- Industry standard for conversion
-- Perfect LaTeX support
-- Journal-ready outputs
+| Requirement | Why Critical |
+|-------------|--------------|
+| Pixel-perfect .docx | Journals require Word submission |
+| Track changes round-trip | Co-authors edit in Word, changes must survive |
+| Equations (LaTeX/MathML) | Academic papers need math |
+| Complex tables | Data presentation |
+| Section breaks, headers | Thesis/dissertation formatting |
 
-**Rejected Alternatives**:
-- **Quill/TinyMCE**: Not flexible enough for academic needs
-- **Slate**: Too low-level, longer development time
-- **Direct .docx manipulation**: Loss of semantic structure
+#### Why OnlyOffice
+
+**Chosen Approach**: Embed OnlyOffice Document Server in VS Code WebView
+
+**Benefits**:
+1. **Best .docx compatibility** in open-source world
+2. **Track changes work natively** - no custom implementation needed
+3. **Equations, tables, sections** - all supported out of box
+4. **Collaborative editing** - built-in, battle-tested
+5. **AGPL license** - compatible with open source project
+
+**Trade-offs accepted**:
+- Heavier footprint (~100MB) vs lightweight web editor
+- Requires Docker or bundled binary
+- Less UI customization than ProseMirror
+
+#### Architecture
+
+```
+VS Code Extension
+    │
+    ├── Custom Editor Provider (*.docx)
+    │       │
+    │       └── WebView with OnlyOffice iframe
+    │               │
+    └───────────────┴── OnlyOffice Document Server (local Docker)
+```
+
+#### Rejected Alternatives
+
+| Option | Why Rejected |
+|--------|--------------|
+| **ProseMirror/TipTap** | 6-12+ months to build track changes, equations, section breaks. Would never match Word perfectly. |
+| **LibreOffice WASM** | Experimental, ~300MB, dated UI |
+| **Collabora Online** | Requires server infrastructure |
+| **Native Word via COM** | Windows-only, not cross-platform |
+
+**The Key Insight**: Building Word-compatible editing from scratch is a multi-year effort. OnlyOffice already solved this problem.
+
+See `docs/plans/2024-12-17-onlyoffice-integration-design.md` for full implementation plan.
 
 ---
 
