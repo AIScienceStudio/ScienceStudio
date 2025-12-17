@@ -180,19 +180,80 @@ class ResearchAgent:
 
 ## 5. AI Integration Approach
 
-### Decision: LangChain.js + Optional MCP
+### Decision: Claude Code as Brain + MCP Research Tools
 
-**Primary**: LangChain.js
-- Mature JavaScript ecosystem
-- Extensive tool library
-- Provider agnostic (OpenAI/Anthropic/Local)
+**PIVOT (December 2024)**: Instead of building a custom agentic AI system, we leverage Claude Code as the orchestration brain.
 
-**Secondary**: Model Context Protocol (MCP)
-- Standardized tool exposure
-- Future-proof for AI evolution
-- Clean agent/tool separation
+#### Why NOT Build a Custom Agent
 
-**Local LLM Support**: Ollama integration for privacy-conscious users
+**Rejected Approach**: Custom Python agent with LangChain/LangGraph
+- Would reinvent what Claude Code already does (planning, tool use, multi-step execution)
+- Significant development and maintenance burden
+- Would always be playing catch-up with Claude's capabilities
+
+#### Why Claude Code as Brain
+
+**Chosen Approach**: Use Claude Code for all agentic orchestration
+
+**Benefits**:
+1. **Already Has Planning**: Claude Code plans tasks, breaks them down, iterates
+2. **Already Has Tool Use**: File read/write/edit, bash commands, search
+3. **Already Has Memory**: Context management across conversations
+4. **Free Updates**: As Claude improves, ScienceStudio gets smarter
+5. **Battle-Tested**: Used by thousands of developers daily
+
+#### Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│  ScienceStudio UI Layer                             │
+│  - VS Code Extension                                │
+│  - ProseMirror for .docx editing                    │
+│  - PDF Library view                                 │
+│  - Research-focused interface                       │
+│  - Focus Mode (hides VS Code complexity)            │
+└─────────────────────┬───────────────────────────────┘
+                      │
+                      ▼
+┌─────────────────────────────────────────────────────┐
+│  Claude Code = THE BRAIN                            │
+│  (No custom agent needed)                           │
+│                                                     │
+│  + MCP Servers for Research Superpowers:            │
+│    ├── pdf-mcp: Semantic PDF extraction             │
+│    ├── citation-mcp: Paper lookup & verification   │
+│    ├── library-mcp: Vector search over papers       │
+│    └── docx-mcp: Word document manipulation        │
+└─────────────────────────────────────────────────────┘
+```
+
+#### MCP Servers (What We Build)
+
+Instead of building an agent, we build **research tools** that Claude Code can use:
+
+1. **pdf-mcp**: Extract text, sections, figures, tables from PDFs
+2. **citation-mcp**: Query Semantic Scholar, CrossRef, DOI lookup
+3. **library-mcp**: Vector search over user's paper library (ChromaDB/LanceDB)
+4. **docx-mcp**: Read/write .docx with formatting preservation
+
+#### Comparison: Old vs New Architecture
+
+| Aspect | Old (Custom Agent) | New (Claude Code Brain) |
+|--------|-------------------|------------------------|
+| Planning | Build from scratch | Already exists |
+| Tool use | Build from scratch | Already exists |
+| Context | Build from scratch | Already exists |
+| Our focus | Agent + Tools + UI | Tools + UI only |
+| Maintenance | High | Low |
+| Capability ceiling | Limited by us | Limited by Anthropic |
+
+**The Key Insight**: Cursor didn't build their own agent - they built a great interface and tools for Claude/GPT to use. We do the same for researchers.
+
+#### Local LLM Fallback
+
+For offline/privacy needs:
+- MCP servers can also work with Ollama
+- But Claude Code remains the recommended brain for full capabilities
 
 ---
 
