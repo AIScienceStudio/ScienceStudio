@@ -12,6 +12,10 @@ import { FileServer } from '../server/fileServer';
  * - Documents are copied to a shared folder accessible by the embedded file server
  * - WebView embeds OnlyOffice editor via iframe
  * - File server runs on host, accessible from Docker via host.docker.internal
+ *
+ * Known Issue: Cursor offset in VS Code WebView
+ * - See docs/issues/editor_related/cursor-offset-issue.md for details
+ * - Multiple compensation strategies are implemented below
  */
 export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocument> {
     public static readonly viewType = 'sciencestudio.docxEditor';
@@ -19,11 +23,13 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
     private static readonly ONLYOFFICE_URL = 'http://localhost:8080';
     private fileServer: FileServer;
     private documentsFolder: string = '';
+    private activeWebviews: Map<string, vscode.WebviewPanel> = new Map();
 
     private readonly _onDidChangeCustomDocument = new vscode.EventEmitter<vscode.CustomDocumentEditEvent<DocxDocument>>();
     public readonly onDidChangeCustomDocument = this._onDidChangeCustomDocument.event;
 
     private fileServerReady: Promise<void>;
+    private zoomLevelListener: vscode.Disposable | undefined;
 
     constructor(private readonly context: vscode.ExtensionContext) {
         this.fileServer = FileServer.getInstance();
@@ -33,6 +39,36 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
 
         // Start file server and track when it's ready
         this.fileServerReady = this.initFileServer();
+
+        // Listen for VS Code zoom level changes
+        this.zoomLevelListener = vscode.workspace.onDidChangeConfiguration(e => {
+            if (e.affectsConfiguration('window.zoomLevel')) {
+                this.notifyZoomChange();
+            }
+        });
+    }
+
+    /**
+     * Get current VS Code zoom level and calculate zoom factor
+     */
+    private getVSCodeZoomInfo(): { zoomLevel: number; zoomFactor: number } {
+        const zoomLevel = vscode.workspace.getConfiguration('window').get<number>('zoomLevel') || 0;
+        // Each zoom level step is 20% (factor of 1.2)
+        const zoomFactor = Math.pow(1.2, zoomLevel);
+        return { zoomLevel, zoomFactor };
+    }
+
+    /**
+     * Notify all active WebViews of zoom level change
+     */
+    private notifyZoomChange(): void {
+        const zoomInfo = this.getVSCodeZoomInfo();
+        this.activeWebviews.forEach((panel) => {
+            panel.webview.postMessage({
+                type: 'vscode-zoom-changed',
+                ...zoomInfo
+            });
+        });
     }
 
     /**
@@ -90,6 +126,13 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
             localResourceRoots: [this.context.extensionUri]
         };
 
+        // Track this WebView for zoom notifications
+        const docId = document.uri.toString();
+        this.activeWebviews.set(docId, webviewPanel);
+        webviewPanel.onDidDispose(() => {
+            this.activeWebviews.delete(docId);
+        });
+
         // Generate unique document key for OnlyOffice
         const docKey = document.getDocumentKey();
         const sharedFileName = document.getSharedFileName();
@@ -98,9 +141,13 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
         const callbackUrl = this.fileServer.getCallbackUrl();
         const fileName = path.basename(document.uri.fsPath);
 
+        // Get VS Code zoom info
+        const zoomInfo = this.getVSCodeZoomInfo();
+
         console.log(`Opening document: ${fileName}`);
         console.log(`Document URL for OnlyOffice: ${docUrl}`);
         console.log(`Callback URL: ${callbackUrl}`);
+        console.log(`VS Code zoom level: ${zoomInfo.zoomLevel}, factor: ${zoomInfo.zoomFactor}`);
 
         webviewPanel.webview.html = this.getHtmlForWebview(
             webviewPanel.webview,
@@ -108,7 +155,8 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
             docUrl,
             docKey,
             fileName,
-            callbackUrl
+            callbackUrl,
+            zoomInfo
         );
 
         // Handle messages from WebView
@@ -116,12 +164,28 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
             switch (message.type) {
                 case 'ready':
                     console.log('OnlyOffice editor ready');
+                    // Send initial zoom info after editor is ready
+                    webviewPanel.webview.postMessage({
+                        type: 'vscode-zoom-changed',
+                        ...this.getVSCodeZoomInfo()
+                    });
                     break;
                 case 'save':
                     await this.handleSave(document, message.data);
                     break;
                 case 'inline-ai-request':
                     await this.handleInlineAI(document, webviewPanel, message);
+                    break;
+                case 'diagnostic-log':
+                    // Log diagnostic info from WebView
+                    console.log('[WebView Diagnostic]', message.data);
+                    break;
+                case 'cursor-offset-detected':
+                    // User reported cursor offset via calibration
+                    console.log('[Cursor Offset]', message.offset);
+                    vscode.window.showInformationMessage(
+                        `Detected cursor offset: Y=${message.offset.y}px. Applying compensation...`
+                    );
                     break;
                 case 'error':
                     vscode.window.showErrorMessage(`OnlyOffice error: ${message.error}`);
@@ -207,6 +271,7 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
 
     /**
      * Generate WebView HTML with OnlyOffice editor
+     * Includes comprehensive zoom compensation for cursor offset fix
      */
     private getHtmlForWebview(
         webview: vscode.Webview,
@@ -214,9 +279,14 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
         documentUrl: string,
         documentKey: string,
         fileName: string,
-        callbackUrl: string
+        callbackUrl: string,
+        zoomInfo: { zoomLevel: number; zoomFactor: number }
     ): string {
         const nonce = this.getNonce();
+
+        // Initial VS Code zoom info passed from extension
+        const initialZoomLevel = zoomInfo.zoomLevel;
+        const initialZoomFactor = zoomInfo.zoomFactor;
 
         // For OnlyOffice, we need a permissive CSP since it loads many resources
         return `
@@ -224,35 +294,21 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
             <html lang="en">
             <head>
                 <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval'; script-src * 'unsafe-inline' 'unsafe-eval'; connect-src *; img-src * data: blob:; frame-src *; style-src * 'unsafe-inline';">
                 <title>${fileName} - ScienceStudio</title>
                 <style>
-                    * {
-                        margin: 0;
-                        padding: 0;
-                        box-sizing: border-box;
-                    }
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
                     body, html {
                         width: 100%;
                         height: 100%;
                         overflow: hidden;
                         background: var(--vscode-editor-background, #1e1e1e);
-                        /* Fix for Chrome 128+ zoom coordinate issue */
-                        zoom: 1 !important;
-                        -webkit-text-size-adjust: 100%;
                     }
                     #editor-container {
                         width: 100%;
                         height: 100%;
-                        /* Ensure no transforms that could affect coordinates */
-                        transform: none !important;
-                        zoom: 1 !important;
-                    }
-                    /* Fix OnlyOffice iframe zoom issues */
-                    #editor-container iframe {
-                        zoom: 1 !important;
-                        transform-origin: 0 0;
+                        position: relative;
                     }
                     #loading {
                         display: flex;
@@ -272,9 +328,7 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
                         animation: spin 1s linear infinite;
                         margin-bottom: 16px;
                     }
-                    @keyframes spin {
-                        to { transform: rotate(360deg); }
-                    }
+                    @keyframes spin { to { transform: rotate(360deg); } }
                     #error {
                         display: none;
                         flex-direction: column;
@@ -286,20 +340,127 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
                         text-align: center;
                         padding: 20px;
                     }
-                    #error h2 {
-                        margin-bottom: 12px;
-                    }
-                    #error p {
-                        color: var(--vscode-foreground, #ccc);
-                        max-width: 500px;
-                        line-height: 1.5;
-                    }
                     #error code {
                         background: var(--vscode-textCodeBlock-background, #333);
                         padding: 8px 16px;
                         border-radius: 4px;
                         margin-top: 12px;
                         display: block;
+                    }
+
+                    /* Diagnostic Panel */
+                    #diagnostic-panel {
+                        position: fixed;
+                        top: 10px;
+                        right: 10px;
+                        background: rgba(0,0,0,0.85);
+                        color: #0f0;
+                        font-family: monospace;
+                        font-size: 11px;
+                        padding: 10px;
+                        border-radius: 6px;
+                        z-index: 99999;
+                        max-width: 350px;
+                        display: none;
+                        border: 1px solid #333;
+                    }
+                    #diagnostic-panel.visible { display: block; }
+                    #diagnostic-panel h5 {
+                        color: #fff;
+                        margin-bottom: 8px;
+                        font-size: 12px;
+                    }
+                    #diagnostic-panel .row {
+                        display: flex;
+                        justify-content: space-between;
+                        margin: 2px 0;
+                    }
+                    #diagnostic-panel .label { color: #888; }
+                    #diagnostic-panel .value { color: #0f0; }
+                    #diagnostic-panel .warning { color: #ff0; }
+                    #diagnostic-panel .error { color: #f00; }
+                    #diagnostic-panel .section {
+                        border-top: 1px solid #333;
+                        margin-top: 8px;
+                        padding-top: 8px;
+                    }
+                    #diagnostic-panel button {
+                        background: #0e639c;
+                        color: white;
+                        border: none;
+                        padding: 4px 8px;
+                        border-radius: 3px;
+                        cursor: pointer;
+                        font-size: 10px;
+                        margin: 2px;
+                    }
+                    #diagnostic-panel button:hover { background: #1177bb; }
+                    #diagnostic-panel button.active { background: #2a2; }
+
+                    /* Click Indicator */
+                    .click-indicator {
+                        position: fixed;
+                        width: 20px;
+                        height: 20px;
+                        border-radius: 50%;
+                        pointer-events: none;
+                        z-index: 99998;
+                        transform: translate(-50%, -50%);
+                    }
+                    .click-indicator.actual {
+                        background: rgba(255, 0, 0, 0.5);
+                        border: 2px solid red;
+                    }
+                    .click-indicator.expected {
+                        background: rgba(0, 255, 0, 0.5);
+                        border: 2px solid lime;
+                    }
+
+                    /* Calibration Overlay */
+                    #calibration-overlay {
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        right: 0;
+                        bottom: 0;
+                        background: rgba(0,0,0,0.7);
+                        z-index: 99997;
+                        display: none;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    #calibration-overlay.visible { display: flex; }
+                    #calibration-target {
+                        width: 40px;
+                        height: 40px;
+                        border: 3px solid #0f0;
+                        border-radius: 50%;
+                        position: relative;
+                    }
+                    #calibration-target::before,
+                    #calibration-target::after {
+                        content: '';
+                        position: absolute;
+                        background: #0f0;
+                    }
+                    #calibration-target::before {
+                        width: 2px;
+                        height: 100%;
+                        left: 50%;
+                        transform: translateX(-50%);
+                    }
+                    #calibration-target::after {
+                        height: 2px;
+                        width: 100%;
+                        top: 50%;
+                        transform: translateY(-50%);
+                    }
+                    #calibration-instructions {
+                        position: absolute;
+                        bottom: 100px;
+                        color: white;
+                        font-size: 18px;
+                        text-align: center;
                     }
 
                     /* Inline AI popup */
@@ -315,9 +476,7 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
                         min-width: 300px;
                         max-width: 400px;
                     }
-                    #inline-ai-popup.visible {
-                        display: block;
-                    }
+                    #inline-ai-popup.visible { display: block; }
                     #inline-ai-popup h4 {
                         color: var(--vscode-foreground, #ccc);
                         margin-bottom: 8px;
@@ -338,9 +497,7 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
                         cursor: pointer;
                         font-size: 12px;
                     }
-                    .ai-cmd:hover {
-                        background: var(--vscode-button-secondaryHoverBackground, #45494e);
-                    }
+                    .ai-cmd:hover { background: var(--vscode-button-secondaryHoverBackground, #45494e); }
                     .ai-cmd.primary {
                         background: var(--vscode-button-background, #0e639c);
                         color: var(--vscode-button-foreground, #fff);
@@ -353,29 +510,6 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
                         border: 1px solid var(--vscode-input-border, #3c3c3c);
                         border-radius: 4px;
                         font-size: 12px;
-                    }
-                    #custom-prompt::placeholder {
-                        color: var(--vscode-input-placeholderForeground, #888);
-                    }
-                    #ai-progress {
-                        color: var(--vscode-foreground, #ccc);
-                        font-size: 12px;
-                        padding: 8px 0;
-                    }
-                    #ai-result {
-                        background: var(--vscode-textCodeBlock-background, #2d2d2d);
-                        padding: 10px;
-                        border-radius: 4px;
-                        margin-top: 8px;
-                        font-size: 13px;
-                        line-height: 1.5;
-                        max-height: 200px;
-                        overflow-y: auto;
-                    }
-                    .ai-result-actions {
-                        display: flex;
-                        gap: 8px;
-                        margin-top: 10px;
                     }
                 </style>
             </head>
@@ -390,10 +524,43 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
                     <h2>Could not connect to OnlyOffice</h2>
                     <p>The OnlyOffice Document Server is not running. Please start it with:</p>
                     <code>docker-compose up -d</code>
-                    <p style="margin-top: 16px; font-size: 12px;">Then reload this editor.</p>
                 </div>
 
                 <div id="editor-container"></div>
+
+                <!-- Diagnostic Panel (Cmd+Shift+D to toggle) -->
+                <div id="diagnostic-panel">
+                    <h5>Cursor Offset Diagnostics</h5>
+                    <div class="row"><span class="label">VS Code Zoom Level:</span><span class="value" id="diag-vscode-zoom">${initialZoomLevel}</span></div>
+                    <div class="row"><span class="label">VS Code Zoom Factor:</span><span class="value" id="diag-vscode-factor">${initialZoomFactor.toFixed(3)}</span></div>
+                    <div class="row"><span class="label">Device Pixel Ratio:</span><span class="value" id="diag-dpr">-</span></div>
+                    <div class="row"><span class="label">Window Inner Size:</span><span class="value" id="diag-window-size">-</span></div>
+                    <div class="row"><span class="label">Chrome Version:</span><span class="value" id="diag-chrome">-</span></div>
+                    <div class="section">
+                        <div class="row"><span class="label">Active Strategy:</span><span class="value" id="diag-strategy">None</span></div>
+                        <div class="row"><span class="label">Applied Zoom:</span><span class="value" id="diag-applied-zoom">1.0</span></div>
+                        <div class="row"><span class="label">Detected Offset:</span><span class="value" id="diag-offset">0, 0</span></div>
+                    </div>
+                    <div class="section">
+                        <div style="margin-bottom: 6px;">Compensation Strategy:</div>
+                        <button id="strat-none">None</button>
+                        <button id="strat-chrome128">Chrome128</button>
+                        <button id="strat-vscode">VSCode</button>
+                        <button id="strat-dpr">DPR</button>
+                        <button id="strat-combined">Combined</button>
+                        <button id="strat-auto" class="active">Auto</button>
+                    </div>
+                    <div class="section">
+                        <button id="btn-calibrate">Calibrate Offset</button>
+                        <button id="btn-test-click">Test Click Mode</button>
+                    </div>
+                </div>
+
+                <!-- Calibration Overlay -->
+                <div id="calibration-overlay">
+                    <div id="calibration-target"></div>
+                    <div id="calibration-instructions">Click precisely on the center of the target<br><small>Press ESC to cancel</small></div>
+                </div>
 
                 <!-- Inline AI Popup (Cmd+K) -->
                 <div id="inline-ai-popup">
@@ -409,11 +576,6 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
                     <input type="text" id="custom-prompt" placeholder="Or type a custom instruction...">
                     <div id="ai-progress" style="display: none;"></div>
                     <div id="ai-result" style="display: none;"></div>
-                    <div class="ai-result-actions" style="display: none;">
-                        <button class="ai-cmd primary" id="accept-btn">Accept</button>
-                        <button class="ai-cmd" id="edit-btn">Edit</button>
-                        <button class="ai-cmd" id="reject-btn">Reject</button>
-                    </div>
                 </div>
 
                 <script nonce="${nonce}">
@@ -424,24 +586,284 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
                     const fileName = '${fileName}';
                     const callbackUrl = '${callbackUrl}';
 
-                    let docEditor = null;
-                    let selectedText = '';
-                    let selectionContext = {};
+                    // ============================================
+                    // CURSOR OFFSET FIX - COMPREHENSIVE SOLUTION
+                    // ============================================
 
-                    // Check if OnlyOffice is available
+                    // State
+                    let docEditor = null;
+                    let vscodeZoomLevel = ${initialZoomLevel};
+                    let vscodeZoomFactor = ${initialZoomFactor};
+                    let currentStrategy = 'auto';
+                    let detectedOffset = { x: 0, y: 0 };
+                    let testClickMode = false;
+                    let calibrationMode = false;
+
+                    // Detect Chrome version for Chrome 128+ fix
+                    function getChromeVersion() {
+                        const match = navigator.userAgent.match(/Chrome\\/(\\d+)/);
+                        return match ? parseInt(match[1]) : 0;
+                    }
+
+                    // Log diagnostic info
+                    function logDiagnostic(data) {
+                        console.log('[Diagnostic]', data);
+                        vscode.postMessage({ type: 'diagnostic-log', data });
+                    }
+
+                    // Update diagnostic panel
+                    function updateDiagnostics() {
+                        const dpr = window.devicePixelRatio || 1;
+                        const chromeVer = getChromeVersion();
+
+                        document.getElementById('diag-dpr').textContent = dpr.toFixed(2);
+                        document.getElementById('diag-window-size').textContent = window.innerWidth + ' x ' + window.innerHeight;
+                        document.getElementById('diag-chrome').textContent = chromeVer || 'N/A';
+                        document.getElementById('diag-vscode-zoom').textContent = vscodeZoomLevel;
+                        document.getElementById('diag-vscode-factor').textContent = vscodeZoomFactor.toFixed(3);
+                        document.getElementById('diag-offset').textContent = detectedOffset.x.toFixed(1) + ', ' + detectedOffset.y.toFixed(1);
+
+                        // Highlight potential issues
+                        const dprEl = document.getElementById('diag-dpr');
+                        dprEl.className = 'value' + (dpr > 1 ? ' warning' : '');
+
+                        const chromeEl = document.getElementById('diag-chrome');
+                        chromeEl.className = 'value' + (chromeVer >= 128 ? ' warning' : '');
+                    }
+
+                    // ============================================
+                    // COMPENSATION STRATEGIES
+                    // ============================================
+
+                    const strategies = {
+                        // No compensation
+                        none: () => ({ zoom: 1, transform: 'none', description: 'No compensation' }),
+
+                        // Chrome 128+ CSS zoom fix (from OnlyOffice issue #2859)
+                        chrome128: () => {
+                            const chromeVer = getChromeVersion();
+                            if (chromeVer < 128) return strategies.none();
+
+                            const dpr = window.devicePixelRatio || 1;
+                            const zoomLevel = Math.round(dpr * 100);
+                            const ratio = (100 * 100) / zoomLevel;
+                            return {
+                                zoom: ratio / 100,
+                                transform: 'none',
+                                description: 'Chrome 128+ zoom: ' + (ratio).toFixed(1) + '%'
+                            };
+                        },
+
+                        // VS Code zoom level compensation
+                        vscode: () => {
+                            if (vscodeZoomFactor === 1) return strategies.none();
+                            return {
+                                zoom: 1 / vscodeZoomFactor,
+                                transform: 'none',
+                                description: 'VS Code zoom: ' + (100 / vscodeZoomFactor).toFixed(1) + '%'
+                            };
+                        },
+
+                        // Device Pixel Ratio compensation
+                        dpr: () => {
+                            const dpr = window.devicePixelRatio || 1;
+                            if (dpr === 1) return strategies.none();
+                            return {
+                                zoom: 1,
+                                transform: 'scale(' + (1/dpr) + ')',
+                                transformSize: dpr,
+                                description: 'DPR scale: ' + (1/dpr).toFixed(3)
+                            };
+                        },
+
+                        // Combined: Chrome128 + VSCode + DPR
+                        combined: () => {
+                            const dpr = window.devicePixelRatio || 1;
+                            const chromeVer = getChromeVersion();
+
+                            let totalFactor = 1;
+
+                            // Apply VS Code zoom compensation
+                            if (vscodeZoomFactor !== 1) {
+                                totalFactor *= (1 / vscodeZoomFactor);
+                            }
+
+                            // Apply Chrome 128 compensation
+                            if (chromeVer >= 128 && dpr > 1) {
+                                const zoomLevel = Math.round(dpr * 100);
+                                totalFactor *= ((100 * 100) / zoomLevel) / 100;
+                            }
+
+                            return {
+                                zoom: totalFactor,
+                                transform: 'none',
+                                description: 'Combined: ' + (totalFactor * 100).toFixed(1) + '%'
+                            };
+                        },
+
+                        // Auto-detect best strategy
+                        auto: () => {
+                            const dpr = window.devicePixelRatio || 1;
+                            const chromeVer = getChromeVersion();
+
+                            // Priority: Combined if multiple factors present
+                            if ((vscodeZoomFactor !== 1) && (chromeVer >= 128 || dpr > 1)) {
+                                return { ...strategies.combined(), autoSelected: 'combined' };
+                            }
+
+                            // Chrome 128+ with high DPR
+                            if (chromeVer >= 128 && dpr > 1) {
+                                return { ...strategies.chrome128(), autoSelected: 'chrome128' };
+                            }
+
+                            // VS Code zoom only
+                            if (vscodeZoomFactor !== 1) {
+                                return { ...strategies.vscode(), autoSelected: 'vscode' };
+                            }
+
+                            // DPR only (non-Chrome 128)
+                            if (dpr > 1) {
+                                return { ...strategies.dpr(), autoSelected: 'dpr' };
+                            }
+
+                            return { ...strategies.none(), autoSelected: 'none' };
+                        }
+                    };
+
+                    // Apply compensation strategy to iframe
+                    function applyStrategy(strategyName) {
+                        const iframe = document.querySelector('#editor-container iframe');
+                        if (!iframe) {
+                            console.log('No iframe found, retrying...');
+                            setTimeout(() => applyStrategy(strategyName), 200);
+                            return;
+                        }
+
+                        const container = document.getElementById('editor-container');
+                        const strategy = strategies[strategyName]();
+
+                        logDiagnostic({
+                            strategy: strategyName,
+                            result: strategy,
+                            dpr: window.devicePixelRatio,
+                            vscodeZoom: vscodeZoomFactor,
+                            chrome: getChromeVersion()
+                        });
+
+                        // Reset styles first
+                        iframe.style.zoom = '';
+                        iframe.style.transform = '';
+                        iframe.style.transformOrigin = '';
+                        iframe.style.width = '';
+                        iframe.style.height = '';
+                        iframe.style.position = '';
+                        container.style.overflow = '';
+
+                        // Apply zoom if specified
+                        if (strategy.zoom && strategy.zoom !== 1) {
+                            iframe.style.zoom = strategy.zoom;
+                        }
+
+                        // Apply transform if specified
+                        if (strategy.transform && strategy.transform !== 'none') {
+                            iframe.style.transform = strategy.transform;
+                            iframe.style.transformOrigin = 'top left';
+
+                            if (strategy.transformSize) {
+                                iframe.style.width = (100 * strategy.transformSize) + '%';
+                                iframe.style.height = (100 * strategy.transformSize) + '%';
+                                iframe.style.position = 'absolute';
+                                container.style.overflow = 'hidden';
+                            }
+                        }
+
+                        // Update UI
+                        currentStrategy = strategyName;
+                        document.getElementById('diag-strategy').textContent =
+                            (strategy.autoSelected || strategyName) + (strategy.autoSelected ? ' (auto)' : '');
+                        document.getElementById('diag-applied-zoom').textContent =
+                            strategy.description || (strategy.zoom ? strategy.zoom.toFixed(3) : '1.0');
+
+                        // Update button states
+                        document.querySelectorAll('#diagnostic-panel button[id^="strat-"]').forEach(btn => {
+                            btn.classList.remove('active');
+                        });
+                        document.getElementById('strat-' + strategyName)?.classList.add('active');
+                    }
+
+                    // ============================================
+                    // CALIBRATION & TESTING
+                    // ============================================
+
+                    function startCalibration() {
+                        calibrationMode = true;
+                        document.getElementById('calibration-overlay').classList.add('visible');
+                    }
+
+                    function endCalibration() {
+                        calibrationMode = false;
+                        document.getElementById('calibration-overlay').classList.remove('visible');
+                    }
+
+                    function handleCalibrationClick(e) {
+                        if (!calibrationMode) return;
+
+                        const target = document.getElementById('calibration-target');
+                        const rect = target.getBoundingClientRect();
+                        const targetX = rect.left + rect.width / 2;
+                        const targetY = rect.top + rect.height / 2;
+
+                        const clickX = e.clientX;
+                        const clickY = e.clientY;
+
+                        detectedOffset = {
+                            x: clickX - targetX,
+                            y: clickY - targetY
+                        };
+
+                        logDiagnostic({
+                            calibration: true,
+                            target: { x: targetX, y: targetY },
+                            click: { x: clickX, y: clickY },
+                            offset: detectedOffset
+                        });
+
+                        vscode.postMessage({
+                            type: 'cursor-offset-detected',
+                            offset: detectedOffset
+                        });
+
+                        updateDiagnostics();
+                        endCalibration();
+
+                        // Show result
+                        alert('Detected offset: X=' + detectedOffset.x.toFixed(1) + 'px, Y=' + detectedOffset.y.toFixed(1) + 'px');
+                    }
+
+                    // Show click indicators for testing
+                    function showClickIndicator(x, y, type) {
+                        const indicator = document.createElement('div');
+                        indicator.className = 'click-indicator ' + type;
+                        indicator.style.left = x + 'px';
+                        indicator.style.top = y + 'px';
+                        document.body.appendChild(indicator);
+
+                        setTimeout(() => indicator.remove(), 2000);
+                    }
+
+                    // ============================================
+                    // EDITOR INITIALIZATION
+                    // ============================================
+
                     async function checkOnlyOffice() {
                         try {
-                            const response = await fetch(onlyofficeUrl + '/healthcheck', {
-                                mode: 'no-cors',
-                                timeout: 5000
-                            });
+                            await fetch(onlyofficeUrl + '/healthcheck', { mode: 'no-cors' });
                             return true;
                         } catch (e) {
                             return false;
                         }
                     }
 
-                    // Initialize OnlyOffice editor
                     async function initEditor() {
                         const isAvailable = await checkOnlyOffice();
 
@@ -452,7 +874,6 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
                             return;
                         }
 
-                        // Load OnlyOffice API script
                         const script = document.createElement('script');
                         script.src = onlyofficeUrl + '/web-apps/apps/api/documents/api.js';
                         script.onload = () => {
@@ -467,12 +888,12 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
                     }
 
                     function createEditor() {
-                        console.log('=== OnlyOffice Configuration ===');
-                        console.log('Document URL:', documentUrl);
-                        console.log('Document Key:', documentKey);
-                        console.log('Callback URL:', callbackUrl);
-                        console.log('OnlyOffice URL:', onlyofficeUrl);
-                        console.log('================================');
+                        logDiagnostic({
+                            event: 'createEditor',
+                            documentUrl,
+                            documentKey,
+                            vscodeZoom: vscodeZoomFactor
+                        });
 
                         docEditor = new DocsAPI.DocEditor('editor-container', {
                             document: {
@@ -480,58 +901,38 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
                                 key: documentKey,
                                 title: fileName,
                                 url: documentUrl,
-                                permissions: {
-                                    edit: true,
-                                    download: true,
-                                    print: true,
-                                    review: true,
-                                    comment: true
-                                }
+                                permissions: { edit: true, download: true, print: true, review: true, comment: true }
                             },
                             editorConfig: {
                                 mode: 'edit',
                                 lang: 'en',
                                 callbackUrl: callbackUrl,
-                                user: {
-                                    id: 'sciencestudio-user',
-                                    name: 'Researcher'
-                                },
+                                user: { id: 'sciencestudio-user', name: 'Researcher' },
                                 customization: {
                                     autosave: true,
                                     chat: false,
                                     comments: true,
                                     compactHeader: true,
-                                    compactToolbar: false,
                                     forcesave: true,
                                     help: false,
-                                    hideRightMenu: false,
-                                    logo: {
-                                        image: '',
-                                        imageDark: ''
-                                    },
-                                    toolbarNoTabs: false,
                                     uiTheme: 'theme-dark'
                                 }
                             },
                             events: {
                                 onReady: () => {
                                     vscode.postMessage({ type: 'ready' });
-                                    // Fix for zoom cursor offset issue
-                                    setTimeout(fixZoomOffset, 500);
+                                    setTimeout(() => {
+                                        applyStrategy(currentStrategy);
+                                        updateDiagnostics();
+                                    }, 300);
                                 },
                                 onAppReady: () => {
-                                    // Called when app is fully loaded
-                                    setTimeout(fixZoomOffset, 100);
+                                    setTimeout(() => applyStrategy(currentStrategy), 100);
                                 },
-                                onDocumentStateChange: (event) => {
-                                    // Document modified
-                                    if (event.data) {
-                                        vscode.postMessage({ type: 'modified' });
-                                    }
+                                onDocumentStateChange: (e) => {
+                                    if (e.data) vscode.postMessage({ type: 'modified' });
                                 },
-                                onError: (event) => {
-                                    vscode.postMessage({ type: 'error', error: event.data });
-                                }
+                                onError: (e) => vscode.postMessage({ type: 'error', error: e.data })
                             },
                             type: 'desktop',
                             width: '100%',
@@ -539,142 +940,83 @@ export class DocxEditorProvider implements vscode.CustomEditorProvider<DocxDocum
                         });
                     }
 
-                    // Inline AI popup
-                    const popup = document.getElementById('inline-ai-popup');
-                    const progressEl = document.getElementById('ai-progress');
-                    const resultEl = document.getElementById('ai-result');
-                    const actionsEl = document.querySelector('.ai-result-actions');
-
-                    function showPopup(x, y) {
-                        popup.style.left = x + 'px';
-                        popup.style.top = y + 'px';
-                        popup.classList.add('visible');
-                    }
-
-                    function hidePopup() {
-                        popup.classList.remove('visible');
-                        progressEl.style.display = 'none';
-                        resultEl.style.display = 'none';
-                        actionsEl.style.display = 'none';
-                    }
-
-                    // Handle AI commands
-                    document.querySelectorAll('.ai-cmd[data-cmd]').forEach(btn => {
-                        btn.addEventListener('click', () => {
-                            const command = btn.dataset.cmd;
-                            sendAIRequest(command);
-                        });
-                    });
-
-                    document.getElementById('custom-prompt').addEventListener('keydown', (e) => {
-                        if (e.key === 'Enter') {
-                            sendAIRequest('custom', e.target.value);
-                        }
-                    });
-
-                    function sendAIRequest(command, customPrompt) {
-                        progressEl.style.display = 'block';
-                        progressEl.textContent = 'Processing...';
-
-                        vscode.postMessage({
-                            type: 'inline-ai-request',
-                            selection: selectedText,
-                            context: selectionContext,
-                            command: command,
-                            customPrompt: customPrompt
-                        });
-                    }
-
-                    // Handle keyboard shortcuts
-                    document.addEventListener('keydown', (e) => {
-                        // Cmd+K or Ctrl+K for inline AI
-                        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-                            e.preventDefault();
-                            // Get selection from OnlyOffice if available
-                            // For now, show popup at center
-                            const x = window.innerWidth / 2 - 150;
-                            const y = window.innerHeight / 2 - 100;
-                            showPopup(x, y);
-                        }
-                        // Escape to close popup
-                        if (e.key === 'Escape') {
-                            hidePopup();
-                        }
-                    });
+                    // ============================================
+                    // EVENT HANDLERS
+                    // ============================================
 
                     // Handle messages from extension
                     window.addEventListener('message', (event) => {
-                        const message = event.data;
-                        switch (message.type) {
-                            case 'inline-ai-response':
-                                if (message.status === 'streaming') {
-                                    progressEl.textContent = message.progress;
-                                } else if (message.status === 'complete') {
-                                    progressEl.style.display = 'none';
-                                    resultEl.style.display = 'block';
-                                    resultEl.textContent = message.result;
-                                    actionsEl.style.display = 'flex';
-                                } else if (message.status === 'error') {
-                                    progressEl.textContent = 'Error: ' + message.error;
-                                }
-                                break;
+                        const msg = event.data;
+                        if (msg.type === 'vscode-zoom-changed') {
+                            vscodeZoomLevel = msg.zoomLevel;
+                            vscodeZoomFactor = msg.zoomFactor;
+                            updateDiagnostics();
+                            if (currentStrategy === 'auto' || currentStrategy === 'vscode' || currentStrategy === 'combined') {
+                                applyStrategy(currentStrategy);
+                            }
                         }
                     });
 
-                    // Accept/Reject buttons
-                    document.getElementById('accept-btn').addEventListener('click', () => {
-                        // TODO: Insert text into OnlyOffice
-                        hidePopup();
-                    });
-                    document.getElementById('reject-btn').addEventListener('click', hidePopup);
-
-                    // Fix for VS Code WebView + Chrome zoom cursor offset issue
-                    // The issue is that devicePixelRatio affects mouse coordinates
-                    function fixZoomOffset() {
-                        try {
-                            const iframe = document.querySelector('#editor-container iframe');
-                            if (!iframe) {
-                                console.log('No iframe found yet, retrying...');
-                                setTimeout(fixZoomOffset, 200);
-                                return;
-                            }
-
-                            const dpr = window.devicePixelRatio || 1;
-                            console.log('Device Pixel Ratio:', dpr);
-                            console.log('Screen size:', window.screen.width, 'x', window.screen.height);
-                            console.log('Window inner size:', window.innerWidth, 'x', window.innerHeight);
-
-                            // For Retina/HiDPI displays, we need to counter-scale the iframe
-                            // This makes the iframe render at 1:1 physical pixels
-                            if (dpr > 1) {
-                                const container = document.getElementById('editor-container');
-
-                                // Scale down by DPR, then size up to compensate
-                                iframe.style.transform = 'scale(' + (1/dpr) + ')';
-                                iframe.style.transformOrigin = 'top left';
-                                iframe.style.width = (100 * dpr) + '%';
-                                iframe.style.height = (100 * dpr) + '%';
-                                iframe.style.position = 'absolute';
-                                iframe.style.top = '0';
-                                iframe.style.left = '0';
-
-                                container.style.position = 'relative';
-                                container.style.overflow = 'hidden';
-
-                                console.log('Applied HiDPI fix: scale=', 1/dpr, 'size=', (100*dpr)+'%');
-                            }
-                        } catch (e) {
-                            console.error('Error fixing zoom offset:', e);
+                    // Keyboard shortcuts
+                    document.addEventListener('keydown', (e) => {
+                        // Cmd+Shift+D: Toggle diagnostic panel
+                        if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'd') {
+                            e.preventDefault();
+                            document.getElementById('diagnostic-panel').classList.toggle('visible');
+                            updateDiagnostics();
                         }
-                    }
+                        // Cmd+K: Inline AI
+                        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                            e.preventDefault();
+                            const popup = document.getElementById('inline-ai-popup');
+                            popup.style.left = (window.innerWidth / 2 - 150) + 'px';
+                            popup.style.top = (window.innerHeight / 2 - 100) + 'px';
+                            popup.classList.add('visible');
+                        }
+                        // Escape
+                        if (e.key === 'Escape') {
+                            document.getElementById('inline-ai-popup').classList.remove('visible');
+                            endCalibration();
+                            testClickMode = false;
+                        }
+                    });
 
-                    // Re-apply fix on window resize (zoom might change)
+                    // Calibration click handler
+                    document.getElementById('calibration-overlay').addEventListener('click', handleCalibrationClick);
+
+                    // Test click mode
+                    document.addEventListener('click', (e) => {
+                        if (testClickMode && !e.target.closest('#diagnostic-panel')) {
+                            showClickIndicator(e.clientX, e.clientY, 'actual');
+                        }
+                    });
+
+                    // Strategy buttons
+                    ['none', 'chrome128', 'vscode', 'dpr', 'combined', 'auto'].forEach(strat => {
+                        document.getElementById('strat-' + strat)?.addEventListener('click', () => {
+                            applyStrategy(strat);
+                        });
+                    });
+
+                    // Calibrate button
+                    document.getElementById('btn-calibrate')?.addEventListener('click', startCalibration);
+
+                    // Test click mode toggle
+                    document.getElementById('btn-test-click')?.addEventListener('click', (e) => {
+                        testClickMode = !testClickMode;
+                        e.target.classList.toggle('active', testClickMode);
+                        e.target.textContent = testClickMode ? 'Exit Test Mode' : 'Test Click Mode';
+                    });
+
+                    // Window resize
                     window.addEventListener('resize', () => {
-                        setTimeout(fixZoomOffset, 100);
+                        updateDiagnostics();
+                        setTimeout(() => applyStrategy(currentStrategy), 100);
                     });
 
                     // Initialize
                     initEditor();
+                    updateDiagnostics();
                 </script>
             </body>
             </html>

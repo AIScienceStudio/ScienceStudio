@@ -1,9 +1,55 @@
 # OnlyOffice Cursor Offset Issue in VS Code WebView
 
-**Status:** Unresolved
+**Status:** In Progress (Diagnostic mode implemented)
 **Priority:** Critical (blocks usability)
 **Date:** December 2024
 **Environment:** VS Code WebView + OnlyOffice DocumentServer 9.2.0 in Docker
+
+## Diagnostic Mode
+
+A comprehensive diagnostic and testing mode has been implemented to help identify and fix the cursor offset issue.
+
+### How to Access
+
+1. Open any `.docx` file in ScienceStudio
+2. Press `Cmd+Shift+D` (Mac) or `Ctrl+Shift+D` (Windows/Linux) to toggle the diagnostic panel
+
+### Diagnostic Panel Features
+
+The panel displays:
+- **VS Code Zoom Level**: Current `window.zoomLevel` setting
+- **VS Code Zoom Factor**: Calculated factor (1.2^zoomLevel)
+- **Device Pixel Ratio**: `window.devicePixelRatio` value
+- **Chrome Version**: Detected Chrome version (important for 128+ fix)
+- **Active Strategy**: Currently applied compensation strategy
+- **Detected Offset**: Offset measured via calibration
+
+### Compensation Strategies
+
+You can manually select different compensation strategies:
+
+| Strategy | Description |
+|----------|-------------|
+| **None** | No compensation applied |
+| **Chrome128** | Fix for Chrome 128+ CSS zoom bug (issue #2859) |
+| **VSCode** | Compensates for VS Code's zoom level |
+| **DPR** | Compensates for devicePixelRatio on Retina displays |
+| **Combined** | Applies all relevant compensations together |
+| **Auto** | Automatically selects best strategy based on environment |
+
+### Calibration Tool
+
+1. Click "Calibrate Offset" in the diagnostic panel
+2. A target crosshair appears in the center of the screen
+3. Click precisely on the center of the target
+4. The detected offset (difference between expected and actual click position) is displayed
+
+### Test Click Mode
+
+1. Click "Test Click Mode" in the diagnostic panel
+2. Click anywhere in the editor
+3. A red indicator shows where your click was registered
+4. Use this to visually verify if the offset is corrected
 
 ## Problem Description
 
