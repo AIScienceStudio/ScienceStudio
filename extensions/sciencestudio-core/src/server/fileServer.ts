@@ -43,20 +43,30 @@ export class FileServer {
                 this.handleRequest(req, res);
             });
 
+            const tryListen = () => {
+                this.server!.listen(this.port, '0.0.0.0');
+            };
+
             this.server.on('error', (err: NodeJS.ErrnoException) => {
                 if (err.code === 'EADDRINUSE') {
                     console.log(`Port ${this.port} already in use, trying next port...`);
                     this.port++;
-                    this.server?.listen(this.port, '0.0.0.0');
+                    if (this.port > 8090) {
+                        reject(new Error('Could not find available port (tried 8081-8090)'));
+                        return;
+                    }
+                    tryListen();
                 } else {
                     reject(err);
                 }
             });
 
-            this.server.listen(this.port, '0.0.0.0', () => {
+            this.server.on('listening', () => {
                 console.log(`ScienceStudio file server running on http://0.0.0.0:${this.port}`);
                 resolve();
             });
+
+            tryListen();
         });
     }
 
